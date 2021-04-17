@@ -1,6 +1,6 @@
 from xml.etree.ElementTree import parse
 
-class XMLReader():
+class SymbolXMLReader():
     def __init__(self,filepath):
         tree = parse(filepath)
         root = tree.getroot()
@@ -24,11 +24,36 @@ class XMLReader():
     def getInfo(self):
         return self.filename, self.width, self.height, self.depth, self.objectList
 
+class TextXMLReader():
+    def __init__(self,filepath):
+        tree = parse(filepath)
+        root = tree.getroot()
+
+        self.filename = root.findtext("filename")
+        self.width = int(root.find("size").findtext("width"))
+        self.height = int(root.find("size").findtext("height"))
+        self.depth = int(root.find("size").findtext("depth"))
+
+        objectList = []
+        for object in root.iter("object"):
+            xmin = int(object.find("bndbox").findtext("xmin"))
+            xmax = int(object.find("bndbox").findtext("xmax"))
+            ymin = int(object.find("bndbox").findtext("ymin"))
+            ymax = int(object.find("bndbox").findtext("ymax"))
+            string = object.findtext("string")
+            orientation = int(float(object.findtext("orientation"))) # 89.9991이 있음 (예외)
+            objectList.append([string, xmin, ymin, xmax, ymax, orientation])
+
+        self.objectList = objectList
+
+    def getInfo(self):
+        return self.filename, self.width, self.height, self.depth, self.objectList
+
 
 
 if __name__ == '__main__':
     filepath = "D:/Test_Models/PNID/EWP_Data/SymbolXML/KNU-A-22300-001-01.xml"
-    xmlReader = XMLReader(filepath)
+    xmlReader = SymbolXMLReader(filepath)
     filename, width, height, depth, objectList = xmlReader.getInfo()
     print(filename, width, height, depth)
     print(objectList)

@@ -11,19 +11,21 @@ def write_coco_annotation(outfile, annotation_data, symbol_dict, segment_params)
 
     data["annotations"] = []
     instance_id = 0
-    for annotation in annotation_data:
+    for annotation in annotation_data: # [drawingname, symname, minx, miny, maxx, maxy]
         area = (annotation[4]-annotation[2]) * (annotation[5]-annotation[3])
-        bbox = [annotation[2],annotation[4],annotation[3]-annotation[2],annotation[5]-annotation[4]] # [x y width height]
 
-        data["annotations"].append({"id" : instance_id,
-                                    "bbox" : bbox ,
-                                   "image_id" : image_dict[annotation[0]],
-                                   "segmentation" : [],
-                                   "ignore" : 0,
-                                   "area" : area,
-                                   "iscrowd" : 0,
-                                   "category_id": symbol_dict[annotation[1]]})
-        instance_id = instance_id+1
+        bbox = [annotation[2],annotation[3],annotation[4]-annotation[2],annotation[5]-annotation[3]] # [x y width height]
+
+        if annotation[1] in symbol_dict:
+            data["annotations"].append({"id" : instance_id,
+                                        "bbox" : bbox ,
+                                       "image_id" : image_dict[annotation[0]],
+                                       "segmentation" : [],
+                                       "ignore" : 0,
+                                       "area" : area,
+                                       "iscrowd" : 0,
+                                       "category_id": symbol_dict[annotation[1]]})
+            instance_id = instance_id+1
 
     data["categories"] = []
     for key, val in symbol_dict.items():
