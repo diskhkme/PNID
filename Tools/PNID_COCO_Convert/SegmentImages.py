@@ -3,7 +3,7 @@ import os
 import numpy as np
 from PNID_COCO_Convert.XMLReader import SymbolXMLReader, TextXMLReader
 
-def segment_images_in_dataset(xml_list, drawing_folder, drawing_segment_folder, segment_params, text_xml_folder, include_text_as_class):
+def segment_images_in_dataset(xml_list, drawing_folder, drawing_segment_folder, segment_params, text_xml_folder, include_text_as_class, merge):
     """
     :param xml_list: xml 파일 리스트
     :param drawing_folder: 원본 도면 이미지가 존재하는 폴더
@@ -11,6 +11,7 @@ def segment_images_in_dataset(xml_list, drawing_folder, drawing_segment_folder, 
     :param segment_params: 분할 파라메터 [가로 크기, 세로 크기, 가로 stride, 세로 stride]
     :param text_xml_folder: text xml 파일의 폴더
     :param include_text_as_class: text 데이터를 class로 추가할 것인지
+    :param merge: symbol merge할 것인지
     :return:
         xml에 있는 전체 도면에서 분할된 도면의 전체 정보 [sub_img_name, symbol_name, xmin, ymin, xmax, ymax]
     """
@@ -24,6 +25,11 @@ def segment_images_in_dataset(xml_list, drawing_folder, drawing_segment_folder, 
 
         xmlReader = SymbolXMLReader(xmlPath)
         img_filename, width, height, depth, objectList = xmlReader.getInfo()
+
+        if merge == True:
+            for i in range(len(objectList)):
+                objectList[i][0] = objectList[i][0].split("-")[0]
+
 
         img_file_path = os.path.join(drawing_folder, img_filename)
 

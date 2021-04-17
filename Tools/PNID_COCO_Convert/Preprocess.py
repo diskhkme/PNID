@@ -18,11 +18,12 @@ test_drawings = ["KNU-A-22300-001-04", "KNU-A-36420-014-03",
 symbol_id_name = base_dir + "Symbol Class List.pbtxt"
 
 include_text_as_class = False
+merge_symbols_direction = True
 train_ratio = 0.9
 segment_params = [800, 800, 300, 300] # width_size, height_size, width_stride, height_stride
 start_id = 1
 
-symbol_dict = read_symbol_txt(symbol_id_name, start_id=start_id, merge=True)
+symbol_dict = read_symbol_txt(symbol_id_name, start_id=start_id, merge=merge_symbols_direction)
 if include_text_as_class == True:
     symbol_dict["text"] = len(symbol_dict.items()) + start_id
 
@@ -37,13 +38,13 @@ train_xmls = xml_paths_without_test[0:train_count]
 val_xmls = xml_paths_without_test[train_count:]
 
 
-# train_annotation_data = segment_images_in_dataset(train_xmls, drawing_folder, drawing_segment_folder, segment_params, text_xml_folder, include_text_as_class)
-# val_annotation_data = segment_images_in_dataset(val_xmls, drawing_folder, drawing_segment_folder, segment_params, text_xml_folder, include_text_as_class)
-test_annotation_data = segment_images_in_dataset(test_xmls, drawing_folder, drawing_segment_folder, segment_params, text_xml_folder, include_text_as_class)
+train_annotation_data = segment_images_in_dataset(train_xmls, drawing_folder, drawing_segment_folder, segment_params, text_xml_folder, include_text_as_class, merge=merge_symbols_direction)
+val_annotation_data = segment_images_in_dataset(val_xmls, drawing_folder, drawing_segment_folder, segment_params, text_xml_folder, include_text_as_class, merge=merge_symbols_direction)
+test_annotation_data = segment_images_in_dataset(test_xmls, drawing_folder, drawing_segment_folder, segment_params, text_xml_folder, include_text_as_class, merge=merge_symbols_direction)
 
 
-# write_coco_annotation("val_annotation.json", val_annotation_data, symbol_dict, segment_params)
-# write_coco_annotation("train_annotation.json", train_annotation_data, symbol_dict, segment_params)
+write_coco_annotation("val_annotation.json", val_annotation_data, symbol_dict, segment_params)
+write_coco_annotation("train_annotation.json", train_annotation_data, symbol_dict, segment_params)
 test_img_dict = write_coco_annotation("test_annotation.json", test_annotation_data, symbol_dict, segment_params)
 
 with open("test_img_dict.pickle", "wb") as f:
