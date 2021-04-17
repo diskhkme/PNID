@@ -1,3 +1,6 @@
 Tools/__pycache__/
 Tools/.idea/
 .idea/
+/__pycache__
+__pycache__/
+*.json
