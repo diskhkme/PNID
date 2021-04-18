@@ -385,4 +385,5 @@
 "weir",
 "welded_connection",
 "y_type_strainer",
+"text",
 )

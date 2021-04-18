@@ -1,7 +1,7 @@
 import cv2
 import os
 import numpy as np
-from PNID_COCO_Convert.XMLReader import SymbolXMLReader, TextXMLReader
+from XMLReader import SymbolXMLReader, TextXMLReader
 
 def segment_images_in_dataset(xml_list, drawing_folder, drawing_segment_folder, segment_params, text_xml_folder, include_text_as_class, merge):
     """
