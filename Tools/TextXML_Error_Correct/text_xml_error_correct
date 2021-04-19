@@ -1,0 +1,18 @@
+import os
+import random
+import pickle
+from Common.XMLReader import TextXMLReader
+
+text_xml_dir = "D:/Test_Models/PNID/EWP_Data/TextXML/"
+drawing_img_dir = "D:/Test_Models/PNID/EWP_Data/Drawing/"
+processed_text_xml_dir = "D:/Test_Models/PNID/EWP_Data/TextXML_Corrected/"
+
+text_xmls = [os.path.join(text_xml_dir, x) for x in os.listdir(text_xml_dir)]
+
+for text_xml in text_xmls:
+    print(text_xml)
+    text_xml_reader = TextXMLReader(text_xml)
+    text_xml_reader.error_correction(drawing_img_dir)
+    filename = os.path.basename(text_xml)
+    text_xml_reader.write_xml(os.path.join(processed_text_xml_dir, filename))
+

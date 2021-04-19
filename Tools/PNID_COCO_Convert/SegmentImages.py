@@ -16,6 +16,7 @@ def segment_images_in_dataset(xml_list, drawing_folder, drawing_segment_folder, 
         xml에 있는 전체 도면에서 분할된 도면의 전체 정보 [sub_img_name, symbol_name, xmin, ymin, xmax, ymax]
     """
     entire_segmented_info = []
+    ground_truth_info = {}
 
     for xmlPath in xml_list:
         print(f"Proceccing {xmlPath}...")
@@ -24,11 +25,11 @@ def segment_images_in_dataset(xml_list, drawing_folder, drawing_segment_folder, 
             continue
 
         xmlReader = SymbolXMLReader(xmlPath)
-        img_filename, width, height, depth, objectList = xmlReader.getInfo()
+        img_filename, width, height, depth, object_list = xmlReader.getInfo()
 
         if merge == True:
-            for i in range(len(objectList)):
-                objectList[i][0] = objectList[i][0].split("-")[0]
+            for i in range(len(object_list)):
+                object_list[i][0] = object_list[i][0].split("-")[0]
 
 
         img_file_path = os.path.join(drawing_folder, img_filename)
@@ -36,13 +37,14 @@ def segment_images_in_dataset(xml_list, drawing_folder, drawing_segment_folder, 
         if include_text_as_class == True and os.path.exists(os.path.join(text_xml_folder, os.path.basename(xmlPath))):
             text_xml_reader = TextXMLReader(os.path.join(text_xml_folder, os.path.basename(xmlPath)))
             _, _, _, _, txt_object_list = text_xml_reader.getInfo()
-            segmented_objects_info = segment_images(img_file_path, drawing_segment_folder, objectList, txt_object_list, segment_params)
+            segmented_objects_info = segment_images(img_file_path, drawing_segment_folder, object_list, txt_object_list, segment_params)
         else:
-            segmented_objects_info = segment_images(img_file_path, drawing_segment_folder, objectList, None, segment_params)
+            segmented_objects_info = segment_images(img_file_path, drawing_segment_folder, object_list, None, segment_params)
 
         entire_segmented_info.extend(segmented_objects_info)
+        ground_truth_info[img_filename] = object_list
 
-    return entire_segmented_info
+    return entire_segmented_info, ground_truth_info
 
 def segment_images(img_path, seg_out_path, objects, txt_object_list, segment_params):
     """
