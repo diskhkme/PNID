@@ -7,6 +7,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class XMLReader():
+    """
+    도면 인식용 심볼 및 XML 파일 파싱 기본 클래스
+
+    Arguments:
+        string filepath : xml 파일 경로
+        xml.etree.ElementTree tree : xml Element tree
+        xml.etree.Element root : xml root element
+        string filename : xml파일의 정보가 해당하는 도면의 이름
+        int width, height, depth : 도면 이미지의 해상도 및 채널
+        dict object_list : xml 내 object 정보를 저장하는 list
+                        (심볼의 경우 [symbolname, xmin, ymin, xmax, ymax])
+                        (텍스트의 경우 [text, xmin, ymin, xmax, ymax, orientation])
+
+    """
     def __init__(self, filepath):
         self.filepath = filepath
         self.tree = parse(filepath)
@@ -17,12 +31,15 @@ class XMLReader():
         self.height = int(self.root.find("size").findtext("height"))
         self.depth = int(self.root.find("size").findtext("depth"))
 
-        self.objectList = []
+        self.object_list = []
 
     def getInfo(self):
-        return self.filename, self.width, self.height, self.depth, self.objectList
+        return self.filename, self.width, self.height, self.depth, self.object_list
 
 class SymbolXMLReader(XMLReader):
+    """
+    심볼 xml 파일 파싱 클래스
+    """
     def __init__(self,filepath):
         super().__init__(filepath)
 
@@ -32,9 +49,12 @@ class SymbolXMLReader(XMLReader):
             ymin = int(object.find("bndbox").findtext("ymin"))
             ymax = int(object.find("bndbox").findtext("ymax"))
             name = object.findtext("name")
-            self.objectList.append([name, xmin, ymin, xmax, ymax])
+            self.object_list.append([name, xmin, ymin, xmax, ymax])
 
 class TextXMLReader(XMLReader):
+    """
+    텍스트 xml 파일 파싱 클래스
+    """
     def __init__(self,filepath):
         super().__init__(filepath)
 
@@ -45,12 +65,24 @@ class TextXMLReader(XMLReader):
             ymax = int(object.find("bndbox").findtext("ymax"))
             string = object.findtext("string")
             orientation = int(math.ceil(float(object.findtext("orientation")))) # 89.9991이 있음 (예외)
-            self.objectList.append([string, xmin, ymin, xmax, ymax, orientation])
+            self.object_list.append([string, xmin, ymin, xmax, ymax, orientation])
 
     def getInfo(self):
-        return self.filename, self.width, self.height, self.depth, self.objectList
+        return self.filename, self.width, self.height, self.depth, self.object_list
 
     def error_correction(self, img_dir, remove_spacing = True, newline_separation = True, remove_blank_pixel = True, remove_blank_threshold = 0.7, margin=5 ):
+        """
+        심볼 xml관련하여 존재하는 오차들을 수정하기 위한 클래스 메소드
+
+        Arguments:
+            string img_dir : 도면 이미지가 저장되어 있는 폴더. remove_blank_pixel이 true일때 사용
+            bool remove_spacing : 문자열 앞뒤의 공백을 trim할 것인지 여부
+            bool newline_separation : 멀티라인 문자의 경우 \n을 기반으로 박스를 분할할 것인지 여부
+            bool remove_blank_pixel : 박스가 문자열보다 지나치게 크게 설정된 경우 인식하여 박스를 줄일 것인지 여부
+            float remove_blank_threshold : 박스 길이 * threshold > 문자열 픽셀 길이일 경우 축소 수행
+            int margin : 축소한 뒤 margin만큼 박스 길이를 늘림
+        """
+
         obj_to_remove = []
         for object in self.root.iter("object"):
             filename_tag = object.findtext("filename")
@@ -130,9 +162,6 @@ class TextXMLReader(XMLReader):
                         last = len(pixel_sum_along_height) - 1 - i
                     if first != -1 and last != -1:
                         break
-
-                if string == "V576":
-                    k = 1
 
                 # 명시된 크기의 thresold 비율보다도 실제 픽셀이 적을 경우
                 if orientation == 0:
