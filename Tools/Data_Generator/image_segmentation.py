@@ -1,22 +1,25 @@
 import cv2
 import os
 import numpy as np
-from XMLReader import SymbolXMLReader, TextXMLReader
+from Common.xml_reader import symbol_xml_reader, text_xml_reader
 
-def segment_images_in_dataset(xml_list, drawing_folder, drawing_segment_folder, segment_params, text_xml_folder, include_text_as_class, merge):
-    """
-    :param xml_list: xml 파일 리스트
-    :param drawing_folder: 원본 도면 이미지가 존재하는 폴더
-    :param drawing_segment_folder: 분할된 이미지를 저장할 폴더
-    :param segment_params: 분할 파라메터 [가로 크기, 세로 크기, 가로 stride, 세로 stride]
-    :param text_xml_folder: text xml 파일의 폴더
-    :param include_text_as_class: text 데이터를 class로 추가할 것인지
-    :param merge: symbol merge할 것인지
-    :return:
+def segment_images_in_dataset(xml_list, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir, symbol_dict, include_text_as_class, prefix):
+    """ 폴더 내 원본 이미지 도면들을 분할하고 분할 정보를 리스트로 저장
+
+    Arguments:
+        xml_list (list): xml 파일 리스트
+        drawing_dir (string): 원본 도면 이미지가 존재하는 폴더
+        drawing_segment_dir (string): 분할된 이미지를 저장할 폴더
+        segment_params (list): 분할 파라메터 [가로 크기, 세로 크기, 가로 stride, 세로 stride]
+        text_xml_dir (string): text xml 파일의 폴더 (include_text_as_calss가 False면 사용하지 않음)
+        symbol_dict (dict): symbol 이름을 key로, id를 value로 갖는 dict (주의!! txt파일과 동일하게 1부터 시작하도록 수정함)
+        include_text_as_class (bool): text 데이터를 class로 추가할 것인지
+        prefix (string): train/val/test 중 하나. 이미지 저장 폴더명 생성에 필요
+
+    Return:
         xml에 있는 전체 도면에서 분할된 도면의 전체 정보 [sub_img_name, symbol_name, xmin, ymin, xmax, ymax]
     """
     entire_segmented_info = []
-    ground_truth_info = {}
 
     for xmlPath in xml_list:
         print(f"Proceccing {xmlPath}...")
@@ -24,38 +27,45 @@ def segment_images_in_dataset(xml_list, drawing_folder, drawing_segment_folder, 
         if ext.lower() != ".xml":
             continue
 
-        xmlReader = SymbolXMLReader(xmlPath)
+        xmlReader = symbol_xml_reader(xmlPath)
         img_filename, width, height, depth, object_list = xmlReader.getInfo()
 
-        if merge == True:
-            for i in range(len(object_list)):
-                object_list[i][0] = object_list[i][0].split("-")[0]
+        for i in range(len(object_list)):
+            object_list[i][0] = symbol_dict[object_list[i][0].split("-")[0]]
 
 
-        img_file_path = os.path.join(drawing_folder, img_filename)
+        img_file_path = os.path.join(drawing_dir, img_filename)
 
-        if include_text_as_class == True and os.path.exists(os.path.join(text_xml_folder, os.path.basename(xmlPath))):
-            text_xml_reader = TextXMLReader(os.path.join(text_xml_folder, os.path.basename(xmlPath)))
+        if include_text_as_class == True and os.path.exists(os.path.join(text_xml_dir, os.path.basename(xmlPath))):
+            text_xml_reader = text_xml_reader(os.path.join(text_xml_dir, os.path.basename(xmlPath)))
             _, _, _, _, txt_object_list = text_xml_reader.getInfo()
-            segmented_objects_info = segment_images(img_file_path, drawing_segment_folder, object_list, txt_object_list, segment_params)
+            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, txt_object_list, segment_params,prefix)
         else:
-            segmented_objects_info = segment_images(img_file_path, drawing_segment_folder, object_list, None, segment_params)
+            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, None, segment_params,prefix)
 
         entire_segmented_info.extend(segmented_objects_info)
-        ground_truth_info[img_filename] = object_list
 
-    return entire_segmented_info, ground_truth_info
+    return entire_segmented_info
 
-def segment_images(img_path, seg_out_path, objects, txt_object_list, segment_params):
+def segment_images(img_path, seg_out_dir, objects, txt_object_list, segment_params, prefix):
+    """ 각 도면에 대해 분할 도면을 생성하고 분할된 파일로 저장
+
+    Arguments:
+        img_path (string): 원본 이미지 파일의 경로
+        seg_out_dir (string): 출력 분할 이미지 경로
+        objects (list): 원본 이미지의 object list [symbol_name, xmin, ymin, xmax, ymax]
+        txt_object_list (list): [optional] text object list [string, xmin, ymin, xmax, ymax, orientation]
+        segment_params (list): 분할 파라메터 [가로 크기, 세로 크기, 가로 stride, 세로 stride]
+        prefix (string): train/val/test 중 하나. 이미지 저장 폴더명 생성에 필요
+
+    Return:
+        seg_obj_info : 한 장의 도면에서 생성된 분할 도면의 전체 정보 [sub_img_name, symbol_name, xmin, ymin, xmax, ymax]
     """
-    :param img_path: 원본 이미지 경로
-    :param seg_out_path : 출력 이미지 경로
-    :param objects: 원본 이미지의 object list [symbol_name, xmin, ymin, xmax, ymax]
-    :param txt_object_list: [optional] text object list [string, xmin, ymin, xmax, ymax, orientation]
-    :param segment_params: 분할 파라메터 [가로 크기, 세로 크기, 가로 stride, 세로 stride]
-    :return:
-        seg_obj_info : 한 도면에서 분할된 도면의 전체 정보 [sub_img_name, symbol_name, xmin, ymin, xmax, ymax]
-    """
+    if os.path.exists(os.path.join(seg_out_dir, prefix)) == False:
+        os.mkdir(os.path.join(seg_out_dir, prefix))
+
+    out_dir = os.path.join(seg_out_dir, prefix)
+
     width_size = segment_params[0]
     height_size = segment_params[1]
     width_stride = segment_params[2]
@@ -73,7 +83,7 @@ def segment_images(img_path, seg_out_path, objects, txt_object_list, segment_par
             txt_boox_array[ind, :] = np.array([txt_bbox_object[1], txt_bbox_object[2], txt_bbox_object[3], txt_bbox_object[4]])
 
     img = cv2.imread(img_path)
-    height_step = img.shape[0] // height_stride
+    height_step = img.shape[0] // height_stride # 원용씨 기존 사용 코드에 +1이 들어가 있는것 같은데 필요 없습니다.
     width_step = img.shape[1] // width_stride
 
     seg_obj_info = []
@@ -98,21 +108,24 @@ def segment_images(img_path, seg_out_path, objects, txt_object_list, segment_par
                 is_bbox_in = txt_xmin_in & txt_ymin_in & txt_xmax_in & txt_ymax_in
                 txt_in_bbox_ind = [i for i, val in enumerate(is_bbox_in) if val == True]
 
-            if len(in_bbox_ind) == 0 and len(txt_in_bbox_ind) == 0:
+            if len(in_bbox_ind) == 0 and len(txt_in_bbox_ind) == 0 and prefix == "train":
                 continue
 
-            if start_width+width_size > img.shape[1]:
-                sub_img = np.zeros((height_size,width_size,3))
+            sub_img = np.ones((height_size, width_size, 3)) * 255
+            if start_width+width_size > img.shape[1] and start_height+height_size > img.shape[0]:
+                sub_img[0:img.shape[0] - (start_height + height_size),
+                        0:img.shape[1] - (start_width + width_size), :] = img[start_height:start_height + height_size,
+                                                                             start_width:start_width + width_size, :]
+            elif start_width+width_size > img.shape[1]:
                 sub_img[:, 0:img.shape[1]-(start_width+width_size), :] = img[start_height:start_height+height_size, start_width:img.shape[1],:]
             elif start_height+height_size > img.shape[0]:
-                sub_img = np.zeros((height_size, width_size, 3))
                 sub_img[0:img.shape[0] - (start_height + height_size), : , :] = img[start_height:img.shape[0], start_width:start_width+width_size, :]
             else:
                 sub_img = img[start_height:start_height+height_size, start_width:start_width+width_size, :]
 
             filename, _ = os.path.splitext(os.path.basename(img_path))
-            sub_img_filename = f"{filename}_{w}_{h}.jpg"
-            cv2.imwrite(os.path.join(seg_out_path,sub_img_filename), sub_img)
+            sub_img_filename = f"{filename}_{h}_{w}.jpg"
+            cv2.imwrite(os.path.join(out_dir, sub_img_filename), sub_img)
 
             for i in in_bbox_ind:
                 seg_obj_info.append([sub_img_filename, objects[i][0], objects[i][1] - start_width, objects[i][2] - start_height,
@@ -122,6 +135,9 @@ def segment_images(img_path, seg_out_path, objects, txt_object_list, segment_par
             for i in txt_in_bbox_ind:
                 seg_obj_info.append([sub_img_filename, "text", txt_object_list[i][1] - start_width, txt_object_list[i][2] - start_height,
                                      txt_object_list[i][3] - start_width, txt_object_list[i][4] - start_height])
+
+            if prefix != "train": # test/val은 박스가 없어도 이미지 인덱스를 만들기 위해 추가
+                seg_obj_info.append([sub_img_filename, -1,0,0,0,0])
 
             # # Debug visualize
             # fig, ax = plt.subplots(1)

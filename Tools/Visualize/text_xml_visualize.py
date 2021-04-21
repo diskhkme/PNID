@@ -1,10 +1,12 @@
 import os
 import random
 import pickle
-from Common.XMLReader import TextXMLReader
+from Common.xml_reader import text_xml_reader
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import cv2
+
+# Text 오류 수정 결과 확인을 위한 코드
 
 text_xml_dir = "D:/Test_Models/PNID/EWP_Data/TextXML_Corrected/"
 drawing_img_dir = "D:/Test_Models/PNID/EWP_Data/Drawing/"
@@ -13,7 +15,7 @@ target_drawing_name = "KNU-B-36130-001-03"
 text_xml_path = os.path.join(text_xml_dir, target_drawing_name + ".xml")
 drawing_path = os.path.join(drawing_img_dir, target_drawing_name + ".jpg")
 
-text_xml_reader = TextXMLReader(text_xml_path)
+text_xml_reader = text_xml_reader(text_xml_path)
 filename, width, height, depth, objectList = text_xml_reader.getInfo()
 
 img = cv2.imread(drawing_path)

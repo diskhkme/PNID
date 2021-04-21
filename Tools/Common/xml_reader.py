@@ -6,7 +6,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-class XMLReader():
+class xml_reader():
     """
     도면 인식용 심볼 및 XML 파일 파싱 기본 클래스
 
@@ -36,7 +36,7 @@ class XMLReader():
     def getInfo(self):
         return self.filename, self.width, self.height, self.depth, self.object_list
 
-class SymbolXMLReader(XMLReader):
+class symbol_xml_reader(xml_reader):
     """
     심볼 xml 파일 파싱 클래스
     """
@@ -51,7 +51,7 @@ class SymbolXMLReader(XMLReader):
             name = object.findtext("name")
             self.object_list.append([name, xmin, ymin, xmax, ymax])
 
-class TextXMLReader(XMLReader):
+class text_xml_reader(xml_reader):
     """
     텍스트 xml 파일 파싱 클래스
     """
@@ -72,15 +72,17 @@ class TextXMLReader(XMLReader):
 
     def error_correction(self, img_dir, remove_spacing = True, newline_separation = True, remove_blank_pixel = True, remove_blank_threshold = 0.7, margin=5 ):
         """
-        심볼 xml관련하여 존재하는 오차들을 수정하기 위한 클래스 메소드
+        심볼 xml관련하여 존재하는 오차들을 수정하기 위한 클래스 메소드 # TODO: 별도 모듈로 분할?
 
         Arguments:
-            string img_dir : 도면 이미지가 저장되어 있는 폴더. remove_blank_pixel이 true일때 사용
-            bool remove_spacing : 문자열 앞뒤의 공백을 trim할 것인지 여부
-            bool newline_separation : 멀티라인 문자의 경우 \n을 기반으로 박스를 분할할 것인지 여부
-            bool remove_blank_pixel : 박스가 문자열보다 지나치게 크게 설정된 경우 인식하여 박스를 줄일 것인지 여부
-            float remove_blank_threshold : 박스 길이 * threshold > 문자열 픽셀 길이일 경우 축소 수행
-            int margin : 축소한 뒤 margin만큼 박스 길이를 늘림
+            img_dir (string): 도면 이미지가 저장되어 있는 폴더. remove_blank_pixel이 true일때 사용
+            remove_spacing (bool): 문자열 앞뒤의 공백을 trim할 것인지 여부
+            newline_separation (bool): 멀티라인 문자의 경우 \n을 기반으로 박스를 분할할 것인지 여부
+            remove_blank_pixel (bool): 박스가 문자열보다 지나치게 크게 설정된 경우 인식하여 박스를 줄일 것인지 여부
+            remove_blank_threshold (float): 박스 길이 * threshold > 문자열 픽셀 길이일 경우 축소 수행
+            margin (int): 축소한 뒤 margin만큼 박스 길이를 늘림
+        Return:
+            None (self.object_list의 박스 좌표가 변화함)
         """
 
         obj_to_remove = []
@@ -153,7 +155,7 @@ class TextXMLReader(XMLReader):
                 except:
                     continue
 
-                assert(first < last, "something wrong...")
+                assert (first < last), "something wrong..."
 
                 for i in range(len(pixel_sum_along_height)):
                     if pixel_sum_along_height[i] != 0:
@@ -178,6 +180,9 @@ class TextXMLReader(XMLReader):
         self.tree.write(out_filename)
 
     def indent(self, elem, level=0):  # 자료 출처 https://goo.gl/J8VoDK
+        """ XML의 들여쓰기 포함한 출력을 위한 함수
+
+        """
         i = "\n" + level * "  "
         if len(elem):
             if not elem.text or not elem.text.strip():
@@ -201,7 +206,7 @@ if __name__ == '__main__':
 
     filepath = "D:/Test_Models/PNID/EWP_Data/TextXML/KNU-B-36130-001-03.xml"
     img_dir = "D:/Test_Models/PNID/EWP_Data/Drawing/"
-    xmlReader = TextXMLReader(filepath)
+    xmlReader = text_xml_reader(filepath)
     filename, width, height, depth, objectList = xmlReader.getInfo()
     xmlReader.error_correction(img_dir)
 
