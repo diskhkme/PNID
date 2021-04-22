@@ -1,9 +1,9 @@
 import cv2
 import os
 import numpy as np
-from Common.xml_reader import symbol_xml_reader, text_xml_reader
+from Common.pnid_xml import symbol_xml_reader, text_xml_reader
 
-def segment_images_in_dataset(xml_list, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir, symbol_dict, include_text_as_class, prefix):
+def generate_segmented_data(xml_list, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir, symbol_dict, include_text_as_class, drawing_resize_scale, prefix):
     """ 폴더 내 원본 이미지 도면들을 분할하고 분할 정보를 리스트로 저장
 
     Arguments:
@@ -14,6 +14,7 @@ def segment_images_in_dataset(xml_list, drawing_dir, drawing_segment_dir, segmen
         text_xml_dir (string): text xml 파일의 폴더 (include_text_as_calss가 False면 사용하지 않음)
         symbol_dict (dict): symbol 이름을 key로, id를 value로 갖는 dict (주의!! txt파일과 동일하게 1부터 시작하도록 수정함)
         include_text_as_class (bool): text 데이터를 class로 추가할 것인지
+        drawing_resize_scale (float): 전체 도면 조정 스케일
         prefix (string): train/val/test 중 하나. 이미지 저장 폴더명 생성에 필요
 
     Return:
@@ -39,15 +40,15 @@ def segment_images_in_dataset(xml_list, drawing_dir, drawing_segment_dir, segmen
         if include_text_as_class == True and os.path.exists(os.path.join(text_xml_dir, os.path.basename(xmlPath))):
             text_xml_reader = text_xml_reader(os.path.join(text_xml_dir, os.path.basename(xmlPath)))
             _, _, _, _, txt_object_list = text_xml_reader.getInfo()
-            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, txt_object_list, segment_params,prefix)
+            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, txt_object_list, segment_params, drawing_resize_scale, prefix)
         else:
-            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, None, segment_params,prefix)
+            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, None, segment_params, drawing_resize_scale, prefix)
 
         entire_segmented_info.extend(segmented_objects_info)
 
     return entire_segmented_info
 
-def segment_images(img_path, seg_out_dir, objects, txt_object_list, segment_params, prefix):
+def segment_images(img_path, seg_out_dir, objects, txt_object_list, segment_params, drawing_resize_scale, prefix):
     """ 각 도면에 대해 분할 도면을 생성하고 분할된 파일로 저장
 
     Arguments:
@@ -59,7 +60,7 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, segment_para
         prefix (string): train/val/test 중 하나. 이미지 저장 폴더명 생성에 필요
 
     Return:
-        seg_obj_info : 한 장의 도면에서 생성된 분할 도면의 전체 정보 [sub_img_name, symbol_name, xmin, ymin, xmax, ymax]
+        seg_obj_info : 한 장의 도면에서 생성된 스케일이 적용된 분할 도면의 전체 정보 [sub_img_name, symbol_name, xmin, ymin, xmax, ymax]
     """
     if os.path.exists(os.path.join(seg_out_dir, prefix)) == False:
         os.mkdir(os.path.join(seg_out_dir, prefix))
@@ -74,24 +75,27 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, segment_para
     bbox_array = np.zeros((len(objects),4))
     for ind in range(len(objects)):
         bbox_object = objects[ind]
-        bbox_array[ind, :] = np.array([bbox_object[1], bbox_object[2], bbox_object[3], bbox_object[4]])
+        bbox_array[ind, :] = np.array([bbox_object[1] , bbox_object[2], bbox_object[3], bbox_object[4]]) * drawing_resize_scale
 
     if txt_object_list is not None:
         txt_boox_array = np.zeros((len(txt_object_list), 4))
         for ind in range(len(txt_object_list)):
             txt_bbox_object = txt_object_list[ind]
-            txt_boox_array[ind, :] = np.array([txt_bbox_object[1], txt_bbox_object[2], txt_bbox_object[3], txt_bbox_object[4]])
+            txt_boox_array[ind, :] = np.array([txt_bbox_object[1], txt_bbox_object[2], txt_bbox_object[3], txt_bbox_object[4]]) * drawing_resize_scale
 
     img = cv2.imread(img_path)
-    height_step = img.shape[0] // height_stride # 원용씨 기존 사용 코드에 +1이 들어가 있는것 같은데 필요 없습니다.
-    width_step = img.shape[1] // width_stride
+    img = cv2.resize(img, dsize=(0,0), fx=drawing_resize_scale, fy=drawing_resize_scale, interpolation=cv2.INTER_LINEAR)
 
     seg_obj_info = []
-    for h in range(height_step):
-        for w in range(width_step):
-            start_width = width_stride * w
-            start_height = height_stride * h
+    start_height = 0
+    h_index = 0
 
+    while start_height < img.shape[0]: # 1픽셀때문에 이미지를 하나 더 만들 필요는 없음
+
+        start_width = 0
+        w_index = 0
+
+        while start_width < img.shape[1]:
             xmin_in = bbox_array[:, 0] > start_width
             ymin_in = bbox_array[:, 1] > start_height
             xmax_in = bbox_array[:, 2] < start_width+width_size
@@ -109,6 +113,8 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, segment_para
                 txt_in_bbox_ind = [i for i, val in enumerate(is_bbox_in) if val == True]
 
             if len(in_bbox_ind) == 0 and len(txt_in_bbox_ind) == 0 and prefix == "train":
+                start_width += width_stride
+                w_index += 1
                 continue
 
             sub_img = np.ones((height_size, width_size, 3)) * 255
@@ -124,8 +130,9 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, segment_para
                 sub_img = img[start_height:start_height+height_size, start_width:start_width+width_size, :]
 
             filename, _ = os.path.splitext(os.path.basename(img_path))
-            sub_img_filename = f"{filename}_{h}_{w}.jpg"
+            sub_img_filename = f"{filename}_{h_index}_{w_index}.jpg"
             cv2.imwrite(os.path.join(out_dir, sub_img_filename), sub_img)
+
 
             for i in in_bbox_ind:
                 seg_obj_info.append([sub_img_filename, objects[i][0], objects[i][1] - start_width, objects[i][2] - start_height,
@@ -138,6 +145,12 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, segment_para
 
             if prefix != "train": # test/val은 박스가 없어도 이미지 인덱스를 만들기 위해 추가
                 seg_obj_info.append([sub_img_filename, -1,0,0,0,0])
+
+            start_width += width_stride
+            w_index += 1
+
+        start_height += height_stride
+        h_index += 1
 
             # # Debug visualize
             # fig, ax = plt.subplots(1)

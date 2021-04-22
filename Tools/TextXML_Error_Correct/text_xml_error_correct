@@ -1,7 +1,7 @@
 import os
 import random
 import pickle
-from Common.xml_reader import text_xml_reader
+from Common.pnid_xml import text_xml_reader
 
 # Text XML에 존재하는 오류(앞뒤공백, multiline 박스 분할, 박스 크기 조정)를 수정하여 다시 XML로 출력
 

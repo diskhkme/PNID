@@ -1,7 +1,7 @@
 import os
 import random
 import pickle
-from Common.xml_reader import text_xml_reader
+from Common.pnid_xml import text_xml_reader
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import cv2

@@ -97,7 +97,7 @@ class evaluate():
         return gt_to_dt_match_dict, dt_to_gt_match_dict
 
     def dump_pr_and_ap_result(self, pr_result, ap_result_str, symbol_dict):
-        """ AP와 PR 계산 결과를 파일로 출력. test 내에 존재하는 모든 도면에 대해 한 파일로 한꺼번에 출력함 # TODO: 엑셀에 붙여넣기 쉽도록 숫자만 저장하는 기능 구현
+        """ AP와 PR 계산 결과를 파일로 출력. test 내에 존재하는 모든 도면에 대해 한 파일로 한꺼번에 출력함
 
         Arguments:
             pr_result (dict): 도면 이름을 key로, 각 도면에서의 PR 계산에 필요한 정보들(detected_num, gt_num 및 클래스별 gt/dt num)을 저장한 dict
@@ -108,10 +108,16 @@ class evaluate():
         """
         outpath = os.path.join(self.output_dir, "test_result.txt")
         with open(outpath, 'w') as f:
+            mean_precision = 0
+            mean_recall = 0
+
             for filename, values in pr_result.items():
                 f.write(f"test drawing : {filename}----------------------------------\n")
                 f.write(f"precision : {values['detected_num']} / {values['all_prediction_num']} = {values['precision']}\n")
                 f.write(f"recall : {values['detected_num']} / {values['all_gt_num']} = {values['recall']}\n")
+                mean_precision += values['precision']
+                mean_recall += values['recall']
+
                 for gt_class, gt_num, detected_num in zip(values["gt_classes"], values["per_class_gt_num"],values["per_class_detected_num"]):
                     if symbol_dict is not None:
                         sym_name = [k for k,v in symbol_dict.items() if v == gt_class]
@@ -122,9 +128,20 @@ class evaluate():
                 f.write("\n")
             f.write(ap_result_str)
 
+            mean_precision /= len(pr_result.keys())
+            mean_recall /= len(pr_result.keys())
+
+            ap_strs = ap_result_str.splitlines()[0].split(" ")
+            ap = float(ap_strs[len(ap_strs)-1])
+            ap_50_strs = ap_result_str.splitlines()[1].split(" ")
+            ap_50 = float(ap_50_strs[len(ap_50_strs) - 1])
+            ap_75_strs = ap_result_str.splitlines()[2].split(" ")
+            ap_75 = float(ap_75_strs[len(ap_75_strs) - 1])
+
+            f.write(f"(mean precision, mean recall, ap, ap50, ap75) = ({mean_precision}, {mean_recall}, {ap}, {ap_50}, {ap_75})")
 
     def calculate_ap(self, gt_result_json, dt_result):
-        """ COCOeval을 사용한 AP계산. 중간 과정으로 gt와 dt에 대한 json파일이 out_dir에 생성됨 # TODO : AP 계산 관련 파라메터 입력 기능 구현
+        """ COCOeval을 사용한 AP계산. 중간 과정으로 gt와 dt에 대한 json파일이 out_dir에 생성됨
 
         Arguments:
             gt_result_json (dict): test 내에 존재하는 모든 도면에 대한 images, annotation, category 정보를 coco json 형태로 저장한 dict

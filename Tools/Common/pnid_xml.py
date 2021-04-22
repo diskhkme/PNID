@@ -5,6 +5,46 @@ import cv2
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from xml.etree.ElementTree import Element, ElementTree, dump
+
+# TODO : 텍스트 인식까지 통합 구현하고 나면, 텍스트 인식정보 포함 출력 기능 추가
+def write_result_to_xml(out_dir, dt_result, symbol_dict):
+    for filename, objects in dt_result.items():
+        root = Element("annotation")
+        filename_node = Element("filename")
+        filename_node.text = f"{filename}.jpg"
+        root.append(filename_node)
+        for object in objects:
+            object_node = Element("object")
+
+            name_node = Element("name")
+            name_node.text = [sym_name for sym_name, id in symbol_dict.items() if id == object["category_id"]][0]
+
+            bndbox_node = Element("bndbox")
+
+            xmin_node = Element("xmin")
+            xmin_node.text = str(object["bbox"][0])
+            ymin_node = Element("ymin")
+            ymin_node.text = str(object["bbox"][1])
+            xmax_node = Element("xmax")
+            xmax_node.text = str(object["bbox"][0] + object["bbox"][2])
+            ymax_node = Element("ymax")
+            ymax_node.text = str(object["bbox"][1] + object["bbox"][3])
+
+            bndbox_node.append(xmin_node)
+            bndbox_node.append(ymin_node)
+            bndbox_node.append(xmax_node)
+            bndbox_node.append(ymax_node)
+
+            object_node.append(name_node)
+            object_node.append(bndbox_node)
+            root.append(object_node)
+
+        indent(root)
+        out_path = os.path.join(out_dir, f"{filename}.xml")
+        ElementTree(root).write(out_path)
+
+
 
 class xml_reader():
     """
@@ -176,26 +216,26 @@ class text_xml_reader(xml_reader):
                         object.find("bndbox").find("ymax").text = str(ymin + last + margin)
 
     def write_xml(self, out_filename):
-        self.indent(self.tree.getroot())
+        indent(self.tree.getroot())
         self.tree.write(out_filename)
 
-    def indent(self, elem, level=0):  # 자료 출처 https://goo.gl/J8VoDK
-        """ XML의 들여쓰기 포함한 출력을 위한 함수
+def indent(elem, level=0):  # 자료 출처 https://goo.gl/J8VoDK
+    """ XML의 들여쓰기 포함한 출력을 위한 함수
 
-        """
-        i = "\n" + level * "  "
-        if len(elem):
-            if not elem.text or not elem.text.strip():
-                elem.text = i + "  "
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-            for elem in elem:
-                self.indent(elem, level + 1)
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
+    """
+    i = "\n" + level * "  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level + 1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
 if __name__ == '__main__':
     # filepath = "D:/Test_Models/PNID/EWP_Data/SymbolXML/KNU-A-22300-001-01.xml"

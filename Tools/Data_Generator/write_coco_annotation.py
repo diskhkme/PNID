@@ -1,7 +1,7 @@
 import json
 
 def write_coco_annotation(out_path, annotation_data, symbol_dict, segment_params):
-    """ 저장된 분할 도면 정보를 기반으로 COCO 포맷의 json 파일 생성 # TODO: coco_json으로 이동
+    """ 저장된 분할 도면 정보를 기반으로 COCO 포맷의 json 파일 생성 # TODO: coco_json으로 이동 검토
 
     Arguments:
         out_path (string): 출력 파일명

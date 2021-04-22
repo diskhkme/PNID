@@ -4,6 +4,8 @@ from itertools import islice
 from copy import deepcopy
 from pathlib import Path
 
+# Writer 부분은 현재 특별히 분리 필요성이 없어서 함수만 제공
+# Predict_Postprocess의 parse_test_gt_xmls() 함수 부분 검토 필요
 
 def coco_json_write(outpath, coco_data):
     with open(outpath, "w") as json_out:
@@ -68,7 +70,7 @@ class coco_dt_json_reader(coco_gt_json_reader):
         # img_id / filename / bbox / global bbox로 용어 통일
         self.img_id_to_bbox_dict = self.get_img_id_to_bbox_dict() # {(segmented)img_id : [(local)bbox], score, category_id}
         self.img_id_to_global_bbox_dict = self.convert_bbox_coordinate_to_global(self.drawing_resize_scale) # {(segmented)img_id : [(global)bbox], score, category_id}
-        # 최종 결과 데이터. 도면 이름을 key로, 변환된 박스 정보들을 value로 가지고 있는 dict # TODO: 변환 기능을 별도 모듈로 분리
+        # 최종 결과 데이터. 도면 이름을 key로, 변환된 박스 정보들을 value로 가지고 있는 dict # TODO: 변환 기능을 별도 모듈로 분리 검토
         self.filename_to_global_bbox_dict = self.get_filename_to_global_bbox_dict() # {(source)img_name : list([(global)bbox], score, category_id})}
 
     def get_img_id_to_bbox_dict(self):

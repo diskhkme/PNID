@@ -4,7 +4,7 @@ import numpy as np
 from copy import deepcopy
 
 from Common.coco_json import coco_dt_json_reader, coco_json_write
-from Common.xml_reader import symbol_xml_reader
+from Common.pnid_xml import symbol_xml_reader
 from Common.symbol_io import read_symbol_txt
 
 class gt_dt_data():
@@ -129,6 +129,7 @@ class gt_dt_data():
 
         return filename_to_global_bbox_dict_after_nms
 
+    # TODO : mmcv의 SoftNMX 사용
     def non_max_suppression_fast(self, result_boxes, iou_threshold, perClass=True):
         """ 도면별 Box list에 대해 NMS 수행
 
