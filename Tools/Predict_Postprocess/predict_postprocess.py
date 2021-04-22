@@ -6,8 +6,8 @@ from Common.pnid_xml import write_result_to_xml
 # Test 결과의 성능 계산 및 이미지 출력 코드
 
 gt_json_filepath = "D:/Test_Models/PNID/EWP_Data/Drawing_Segment/dataset_0/test.json" # 학습 도면 분할시 생성한 test.json 파일 경로
-dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_0/gfl/epoch_36_result/epoch_36_result.bbox.json" # prediction 결과로 mmdetection에서 생성된 json 파일 경로
-output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_0/gfl/epoch_36_result" # 출력 파일들이 저장될 폴더
+dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_0/gfl/epoch_12_result/epoch_12_result.bbox.json" # prediction 결과로 mmdetection에서 생성된 json 파일 경로
+output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_0/gfl/epoch_12_result" # 출력 파일들이 저장될 폴더
 
 drawing_dir = "D:/Test_Models/PNID/EWP_Data/Drawing" # 원본 도면 이미지 폴더
 xml_dir = "D:/Test_Models/PNID/EWP_Data/SymbolXML" # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
@@ -15,7 +15,7 @@ symbol_filepath = "D:/Test_Models/PNID/EWP_Data/EWP_SymbolClass_sym_only.txt" # 
 
 stride_w = 300 # 학습 도면 분할시에 사용한 stride
 stride_h = 300
-drawing_resize_scale = 1 # 학습 도면 분할시에 사용한 scaling factor (절반 크기로 줄였으면 0.5)
+drawing_resize_scale = 1.0 # 학습 도면 분할시에 사용한 scaling factor (절반 크기로 줄였으면 0.5)
 score_threshold = 0.5 # score filtering threshold
 nms_threshold = 0.0
 matching_iou_threshold = 0.5 # 매칭(정답) 처리할 IOU threshold

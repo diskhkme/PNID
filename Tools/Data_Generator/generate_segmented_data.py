@@ -72,16 +72,27 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, segment_para
     width_stride = segment_params[2]
     height_stride = segment_params[3]
 
+
     bbox_array = np.zeros((len(objects),4))
     for ind in range(len(objects)):
+        objects[ind] = [objects[ind][0],
+                        int(objects[ind][1]*drawing_resize_scale),
+                        int(objects[ind][2]*drawing_resize_scale),
+                        int(objects[ind][3]*drawing_resize_scale),
+                        int(objects[ind][4]*drawing_resize_scale)]
         bbox_object = objects[ind]
-        bbox_array[ind, :] = np.array([bbox_object[1] , bbox_object[2], bbox_object[3], bbox_object[4]]) * drawing_resize_scale
+        bbox_array[ind, :] = np.array([bbox_object[1] , bbox_object[2], bbox_object[3], bbox_object[4]])
 
     if txt_object_list is not None:
         txt_boox_array = np.zeros((len(txt_object_list), 4))
         for ind in range(len(txt_object_list)):
+            txt_bbox_object[ind] = [txt_bbox_object[ind][0],
+                                    int(txt_bbox_object[ind][1] * drawing_resize_scale),
+                                    int(txt_bbox_object[ind][2] * drawing_resize_scale),
+                                    int(txt_bbox_object[ind][3] * drawing_resize_scale),
+                                    int(txt_bbox_object[ind][4] * drawing_resize_scale)]
             txt_bbox_object = txt_object_list[ind]
-            txt_boox_array[ind, :] = np.array([txt_bbox_object[1], txt_bbox_object[2], txt_bbox_object[3], txt_bbox_object[4]]) * drawing_resize_scale
+            txt_boox_array[ind, :] = np.array([txt_bbox_object[1], txt_bbox_object[2], txt_bbox_object[3], txt_bbox_object[4]])
 
     img = cv2.imread(img_path)
     img = cv2.resize(img, dsize=(0,0), fx=drawing_resize_scale, fy=drawing_resize_scale, interpolation=cv2.INTER_LINEAR)
