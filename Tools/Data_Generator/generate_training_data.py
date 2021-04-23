@@ -11,7 +11,7 @@ from Data_Generator.write_coco_annotation import write_coco_annotation
 
 base_dir = "D:/Test_Models/PNID/EWP_Data/"
 drawing_dir = base_dir + "Drawing"
-drawing_segment_dir = base_dir + "Drawing_Segment/dataset_1"
+drawing_segment_dir = base_dir + "Drawing_Segment/dataset_5"
 symbol_xml_dir = base_dir + "SymbolXML"
 text_xml_dir = base_dir + "TextXML"
 test_drawings = ["KNU-A-22300-001-04", "KNU-A-36420-014-03",
@@ -21,14 +21,14 @@ test_drawings = ["KNU-A-22300-001-04", "KNU-A-36420-014-03",
                 "KNU-B-36610-005-03"]
 symbol_txt_path = base_dir + "EWP_SymbolClass_sym_only.txt"
 
-include_text_as_class = False
+include_text_as_class = True
 train_ratio = 0.9
 segment_params = [800, 800, 300, 300] # width_size, height_size, width_stride, height_stride
 drawing_resize_scale = 0.5
 
 symbol_dict = read_symbol_txt(symbol_txt_path)
 if include_text_as_class == True:
-    symbol_dict["text"] = len(symbol_dict.items()) + 1
+    symbol_dict["text"] = len(symbol_dict.items())
 
 xml_paths_without_test = [os.path.join(symbol_xml_dir, x) for x in os.listdir(symbol_xml_dir) if x.split(".")[0] not in test_drawings]
 test_xmls = [os.path.join(symbol_xml_dir, f"{x}.xml") for x in test_drawings]
@@ -39,10 +39,10 @@ train_xmls = xml_paths_without_test[0:train_count]
 val_xmls = xml_paths_without_test[train_count:]
 
 # TODO : Train/val은 랜덤 셔플을 하기때문에 항상 한세트로 만들어야함. 코드에서 강제 필요
-train_annotation_data = generate_segmented_data(train_xmls, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir, symbol_dict, include_text_as_class, drawing_resize_scale, "train")
-write_coco_annotation(os.path.join(drawing_segment_dir,"train.json"), train_annotation_data, symbol_dict, segment_params)
 val_annotation_data = generate_segmented_data(val_xmls, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir, symbol_dict, include_text_as_class, drawing_resize_scale, "val")
 write_coco_annotation(os.path.join(drawing_segment_dir,"val.json"), val_annotation_data, symbol_dict, segment_params)
+train_annotation_data = generate_segmented_data(train_xmls, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir, symbol_dict, include_text_as_class, drawing_resize_scale, "train")
+write_coco_annotation(os.path.join(drawing_segment_dir,"train.json"), train_annotation_data, symbol_dict, segment_params)
 
 test_annotation_data = generate_segmented_data(test_xmls, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir, symbol_dict, include_text_as_class, drawing_resize_scale, "test")
 write_coco_annotation(os.path.join(drawing_segment_dir,"test.json"), test_annotation_data, symbol_dict, segment_params)
