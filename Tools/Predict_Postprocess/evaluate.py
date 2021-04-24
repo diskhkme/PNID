@@ -15,6 +15,7 @@ class evaluate():
         self.output_dir = output_dir
 
     def compare_gt_and_dt(self, gt_result, dt_result, matching_iou_threshold):
+        # TODO : 완전한 결과를 보려면 matching이 되지않은 dt의 정보도 전달되면 좋을듯
         """ GT와 DT 결과를 비교하여 매칭이 성공한 index들을 dict로 반환하는 함수
 
         Arguments:
@@ -188,6 +189,7 @@ class evaluate():
             gt_result (dict): 도면 이름을 key로, box들을 value로 갖는 gt dict
             dt_result (dict): 도면 이름을 key로, box들을 value로 갖는 dt dict
             gt_to_dt_match_dict (dict): gt 심볼과 dt 심볼간 매칭 계산 결과 dict
+
         Returns:
             pr_result (dict): 도면 이름을 key로, Precision 및 recall 계산에 필요한 데이터를 value로 갖는 dict
         """
