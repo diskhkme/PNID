@@ -1,5 +1,5 @@
 
-def read_symbol_txt(filename):
+def read_symbol_txt(filename, include_text_as_class):
     class_index = 0
     class_name_to_index_dict = {}
     class_index_to_name_dict = {}
@@ -11,6 +11,10 @@ def read_symbol_txt(filename):
             class_index_to_name_dict[class_index] = class_name
 
             class_index += 1
+
+    if include_text_as_class == True:
+        class_name_to_index_dict["text"] = len(class_name_to_index_dict.items())
+
     return class_name_to_index_dict
 
 def read_symbol_pbtxt(filename, start_id = 0, merge=True):
