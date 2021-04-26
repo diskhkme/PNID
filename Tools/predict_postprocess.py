@@ -6,8 +6,8 @@ from Common.pnid_xml import write_result_to_xml
 # Test 결과의 성능 계산 및 이미지 출력 코드
 
 gt_json_filepath = "D:/Test_Models/PNID/EWP_Data/Drawing_Segment/dataset_5/test.json" # 학습 도면 분할시 생성한 test.json 파일 경로
-dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5/gfl/epoch_36/epoch_36_result.bbox.json" # prediction 결과로 mmdetection에서 생성된 json 파일 경로
-output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5/gfl/epoch_36" # 출력 파일들이 저장될 폴더
+dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5/gfl/epoch_12/epoch_12_result.bbox.json" # prediction 결과로 mmdetection에서 생성된 json 파일 경로
+output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5/gfl/epoch_12" # 출력 파일들이 저장될 폴더
 
 drawing_dir = "D:/Test_Models/PNID/EWP_Data/Drawing" # 원본 도면 이미지 폴더
 symbol_xml_dir = "D:/Test_Models/PNID/EWP_Data/SymbolXML" # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
