@@ -3,7 +3,8 @@ import os
 import numpy as np
 from Common.pnid_xml import symbol_xml_reader, text_xml_reader
 
-def generate_segmented_data(xml_list, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir, symbol_dict, include_text_as_class, drawing_resize_scale, prefix):
+def generate_segmented_data(xml_list, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir, symbol_dict, include_text_as_class, include_text_orientation_as_class,
+                            drawing_resize_scale, prefix):
     """ 폴더 내 원본 이미지 도면들을 분할하고 분할 정보를 리스트로 저장
 
     Arguments:
@@ -40,15 +41,17 @@ def generate_segmented_data(xml_list, drawing_dir, drawing_segment_dir, segment_
         if include_text_as_class == True and os.path.exists(os.path.join(text_xml_dir, os.path.basename(xmlPath))):
             text_xml_reader_obj = text_xml_reader(os.path.join(text_xml_dir, os.path.basename(xmlPath)))
             _, _, _, _, txt_object_list = text_xml_reader_obj.getInfo()
-            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, txt_object_list, symbol_dict, segment_params, drawing_resize_scale, prefix)
+            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, txt_object_list, include_text_orientation_as_class,
+                                                    symbol_dict, segment_params, drawing_resize_scale, prefix)
         else:
-            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, None, symbol_dict, segment_params, drawing_resize_scale, prefix)
+            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, None, None,
+                                                    symbol_dict, segment_params, drawing_resize_scale, prefix)
 
         entire_segmented_info.extend(segmented_objects_info)
 
     return entire_segmented_info
 
-def segment_images(img_path, seg_out_dir, objects, txt_object_list, symbol_dict, segment_params, drawing_resize_scale, prefix):
+def segment_images(img_path, seg_out_dir, objects, txt_object_list, include_text_orientation_as_class, symbol_dict, segment_params, drawing_resize_scale, prefix):
     """ 각 도면에 대해 분할 도면을 생성하고 분할된 파일로 저장
 
     Arguments:
@@ -56,6 +59,7 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, symbol_dict,
         seg_out_dir (string): 출력 분할 이미지 경로
         objects (list): 원본 이미지의 object list [symbol_name, xmin, ymin, xmax, ymax]
         txt_object_list (list): [optional] text object list [string, xmin, ymin, xmax, ymax, orientation]
+        include_text_orientation_as_class (bool): [optional] 텍스트 방향에 따라 별도의 클래스로 분리할 것인지 여부
         symbol_dict (dict): symbol 이름을 key로, id를 value로 갖는 dict
         segment_params (list): 분할 파라메터 [가로 크기, 세로 크기, 가로 stride, 세로 stride]
         prefix (string): train/val/test 중 하나. 이미지 저장 폴더명 생성에 필요
@@ -91,7 +95,8 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, symbol_dict,
                                     int(txt_object_list[ind][1] * drawing_resize_scale),
                                     int(txt_object_list[ind][2] * drawing_resize_scale),
                                     int(txt_object_list[ind][3] * drawing_resize_scale),
-                                    int(txt_object_list[ind][4] * drawing_resize_scale)]
+                                    int(txt_object_list[ind][4] * drawing_resize_scale),
+                                    int(txt_object_list[ind][5])]
             txt_bbox_object = txt_object_list[ind]
             txt_boox_array[ind, :] = np.array([txt_bbox_object[1], txt_bbox_object[2], txt_bbox_object[3], txt_bbox_object[4]])
 
@@ -152,8 +157,19 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, symbol_dict,
 
             # TODO: Text의 경우 text string을 같이 넣도록 추가 구현?
             for i in txt_in_bbox_ind:
-                seg_obj_info.append([sub_img_filename, symbol_dict["text"], txt_object_list[i][1] - start_width, txt_object_list[i][2] - start_height,
-                                     txt_object_list[i][3] - start_width, txt_object_list[i][4] - start_height])
+                if include_text_orientation_as_class == True:
+                    if txt_object_list[i][5] == 0:
+                        seg_obj_info.append([sub_img_filename, symbol_dict["text"], txt_object_list[i][1] - start_width,
+                                             txt_object_list[i][2] - start_height,
+                                             txt_object_list[i][3] - start_width, txt_object_list[i][4] - start_height])
+                    if txt_object_list[i][5] == 90:
+                        seg_obj_info.append(
+                            [sub_img_filename, symbol_dict["text_rotated"], txt_object_list[i][1] - start_width,
+                             txt_object_list[i][2] - start_height,
+                             txt_object_list[i][3] - start_width, txt_object_list[i][4] - start_height])
+                else:
+                    seg_obj_info.append([sub_img_filename, symbol_dict["text"], txt_object_list[i][1] - start_width, txt_object_list[i][2] - start_height,
+                                         txt_object_list[i][3] - start_width, txt_object_list[i][4] - start_height])
 
             if prefix != "train": # test/val은 박스가 없어도 이미지 인덱스를 만들기 위해 추가
                 seg_obj_info.append([sub_img_filename, -1,0,0,0,0])

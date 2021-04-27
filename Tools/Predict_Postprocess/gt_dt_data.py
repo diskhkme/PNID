@@ -21,7 +21,7 @@ class gt_dt_data():
         score_threshold (float): 테스트 결과에서, score < score_threshold이면 score_filter 과정에서 제거
         nms_threshold (float): NMS threshold
     """
-    def __init__(self, gt_json_filepath, dt_json_filepath, drawing_dir, symbol_xml_dir, symbol_filepath, include_text_as_class, text_xml_dir,
+    def __init__(self, gt_json_filepath, dt_json_filepath, drawing_dir, symbol_xml_dir, symbol_filepath, include_text_as_class, include_text_orientation_as_class, text_xml_dir,
                  drawing_resize_scale, stride_w, stride_h,
                  score_threshold = 0.5, nms_iou_threshold = 0.1):
         self.drawing_dir = drawing_dir
@@ -29,10 +29,11 @@ class gt_dt_data():
         self.drawing_resize_scale = drawing_resize_scale
 
         self.include_text_as_class = include_text_as_class
+        self.include_text_orientation_as_class = include_text_orientation_as_class
         if include_text_as_class == True:
             self.text_xml_dir = text_xml_dir
 
-        self.symbol_dict = read_symbol_txt(symbol_filepath, include_text_as_class)
+        self.symbol_dict = read_symbol_txt(symbol_filepath, include_text_as_class, include_text_orientation_as_class)
         self.nms_iou_threshold = nms_iou_threshold
 
         # 주요 생성 데이터-----------
@@ -86,7 +87,12 @@ class gt_dt_data():
                 if os.path.exists(text_xml_path) == True:
                     text_xml = text_xml_reader(text_xml_path)
                     _, _, _, _, text_object_list = text_xml.getInfo()
-                    converted_text_object_list = [["text", x[1], x[2], x[3], x[4]] for x in text_object_list] # x[5] orientation은 현재 무시. symbol과 동일한 형식으로 변환
+                    if self.include_text_orientation_as_class == True:
+                        converted_text_object_list = [["text", x[1], x[2], x[3], x[4]] for x in text_object_list if x[5] == 0]
+                        converted_text_object_list += [["text_rotated", x[1], x[2], x[3], x[4]] for x in text_object_list if
+                                                      x[5] == 90]
+                    else:
+                        converted_text_object_list = [["text", x[1], x[2], x[3], x[4]] for x in text_object_list]
                     object_list = object_list + converted_text_object_list
 
             image = {

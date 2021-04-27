@@ -13,6 +13,7 @@ def draw_bbox_from_bbox_list(image, bbox_list, box_data, color, thickness):
         cv2.rectangle(image_, (x1, y1), (x2, y2), color=color, thickness=thickness)
 
         if box_data is not None:
-            cv2.putText(image_,box_data[i],(x1,y1), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=color)
+            y_middle = int((y1 + y1 + h)/2)
+            cv2.putText(image_,str(box_data[i]),(x1+w,y_middle), cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=color)
 
     return image_
