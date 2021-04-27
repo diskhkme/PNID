@@ -5,7 +5,7 @@ from Visualize.image_drawing import draw_bbox_from_bbox_list
 
 # XML 데이터 검증을 위한 가시화 코드
 
-xml_dir = "D:/Test_Models/PNID/EWP_Data/TextXML_All_Corrected/"
+xml_dir = "D:/Test_Models/PNID/EWP_Data/SymbolXML/"
 drawing_img_dir = "D:/Test_Models/PNID/EWP_Data/Drawing/"
 output_img_dir = "D:/Test_Models/PNID/EWP_Data/Drawing_XML_Validation/"
 is_text_xml = False

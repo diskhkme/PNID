@@ -1,13 +1,14 @@
-from Visualize.symbol_visualize import draw_test_results_to_img
+from Visualize.test_result_visualize import draw_test_results_to_img
 from Predict_Postprocess.gt_dt_data import gt_dt_data
 from Predict_Postprocess.evaluate import evaluate
 from Common.pnid_xml import write_result_to_xml
+from Predict_Postprocess.text_recognition.recognize_text import get_text_detection_result, recognize_text_using_tess
 
 # Test 결과의 성능 계산 및 이미지 출력 코드
 
-gt_json_filepath = "D:/Test_Models/PNID/EWP_Data/Drawing_Segment/dataset_5/test.json" # 학습 도면 분할시 생성한 test.json 파일 경로
-dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5/gfl/epoch_36/epoch_36_result.bbox.json" # prediction 결과로 mmdetection에서 생성된 json 파일 경로
-output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5/gfl/epoch_36" # 출력 파일들이 저장될 폴더
+gt_json_filepath = "D:/Test_Models/PNID/EWP_Data/Drawing_Segment/dataset_5_text_rot/test.json" # 학습 도면 분할시 생성한 test.json 파일 경로
+dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5_text_rot/gfl/epoch_36/epoch_36_result.bbox.json" # prediction 결과로 mmdetection에서 생성된 json 파일 경로
+output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5_text_rot/gfl/epoch_36" # 출력 파일들이 저장될 폴더
 
 drawing_dir = "D:/Test_Models/PNID/EWP_Data/Drawing" # 원본 도면 이미지 폴더
 symbol_xml_dir = "D:/Test_Models/PNID/EWP_Data/SymbolXML" # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
@@ -15,6 +16,7 @@ text_xml_dir = "D:/Test_Models/PNID/EWP_Data/TextXML_All_Corrected" # 원본 도
 symbol_filepath = "D:/Test_Models/PNID/EWP_Data/EWP_SymbolClass_sym_only.txt" # (방향 제거된) symbol index txt 파일 경로
 
 include_text_as_class = True
+include_text_orientation_as_class = True
 stride_w = 300 # 학습 도면 분할시에 사용한 stride
 stride_h = 300
 drawing_resize_scale = 0.5 # 학습 도면 분할시에 사용한 scaling factor (절반 크기로 줄였으면 0.5)
@@ -22,12 +24,15 @@ score_threshold = 0.5 # score filtering threshold
 nms_threshold = 0.1
 matching_iou_threshold = 0.5 # 매칭(정답) 처리할 IOU threshold
 
+# vertical_threshold = 2 # 세로 문자열로 판단하는 기준. 세로가 가로보다 vertical_threshold 배 이상 길면 세로로 판단
+text_img_margin_ratio = 0.1 # detection된 문자열에서 크기를 약간 키워서 text recognition을 수행할 경우. (ex, 0.1이면 box를 1.1배 키워서 인식)
 
 # 1) gt_dt_data 클래스 초기화를 통한 데이터 전처리
 #   : 분할 Ground Truth(gt) 및 detection(dt) result를 기반으로 분할 전 도면 좌표로 다시 맵핑하고, score filtering, NMS를 수행
-gt_dt_result = gt_dt_data(gt_json_filepath, dt_json_filepath, drawing_dir, symbol_xml_dir, symbol_filepath, include_text_as_class, text_xml_dir,
+gt_dt_result = gt_dt_data(gt_json_filepath, dt_json_filepath, drawing_dir, symbol_xml_dir, symbol_filepath, include_text_as_class, include_text_orientation_as_class, text_xml_dir,
                        drawing_resize_scale, stride_w, stride_h,
                        score_threshold, nms_threshold)
+symbol_dict = gt_dt_result.symbol_dict # or read_symbol_txt(symbol_filepath)
 
 # 2) evaluate 클래스 초기화 및 매칭 정보 생성
 #   : NMS 완료된 dt result와 gt result간의 매칭 dictionary 생성
@@ -40,11 +45,16 @@ pr_result = eval.calculate_pr(gt_dt_result.gt_result,gt_dt_result.dt_result_afte
 ap_result_str = eval.calculate_ap(gt_dt_result.gt_result_json, gt_dt_result.dt_result)
 eval.dump_pr_and_ap_result(pr_result,ap_result_str, gt_dt_result.symbol_dict)
 
-# 4) PNID XML 형식으로 파일 출력
-#   : (주로) dt_result_after_nms를 출력하며, 필요에 따라 다른 단계의 데이터도 PNID XML형식으로 출력
-symbol_dict = gt_dt_result.symbol_dict # or read_symbol_txt(symbol_filepath)
+# --- (include_text_as_class == True 인 경우) Text recognition 수행 (오래걸림)
+if include_text_as_class == True:
+    dt_result_after_nms_text_only = get_text_detection_result(gt_dt_result.dt_result_after_nms, symbol_dict)
+    dt_result_text = recognize_text_using_tess(drawing_dir, dt_result_after_nms_text_only, text_img_margin_ratio, symbol_dict)
+    gt_dt_result.dt_result_text_recognition = dt_result_text
+
+# --- PNID XML 형식으로 파일 출력 (TODO : Text recognition 결과 함께 출력)
+#   : (주로) dt_result_after_nms를 출력하며, 필요에 따라 다른 단계의 데이터도 PNID XML형식으로 출력 가능
 write_result_to_xml(output_dir, gt_dt_result.dt_result_after_nms, symbol_dict)
 
-# 5) 가시적으로 확인하기 위한 이미지 도면 출력
+# --- 가시적으로 확인하기 위한 이미지 도면 출력
 draw_test_results_to_img(gt_dt_result, gt_to_dt_match_dict, dt_to_gt_match_dict,
-                         drawing_dir, output_dir, modes=(1,2,3,4,5,6,7), thickness=5)
+                         drawing_dir, output_dir, modes=(1,2,3,4,5,6,7,8), thickness=5)
