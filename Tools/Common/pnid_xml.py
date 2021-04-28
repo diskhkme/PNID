@@ -8,13 +8,18 @@ import matplotlib.pyplot as plt
 from xml.etree.ElementTree import Element, ElementTree, dump
 
 # TODO : 텍스트 인식까지 통합 구현하고 나면, 텍스트 인식정보 포함 출력 기능 추가
-def write_result_to_xml(out_dir, dt_result, symbol_dict):
+def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict):
     for filename, objects in dt_result.items():
         root = Element("annotation")
         filename_node = Element("filename")
         filename_node.text = f"{filename}.jpg"
         root.append(filename_node)
         for object in objects:
+
+            # 텍스트는 별도 XML로 출력
+            if object["category_id"] == symbol_dict["text"] or object["category_id"] == symbol_dict["text_rotated"]:
+                continue
+
             object_node = Element("object")
 
             name_node = Element("name")
@@ -44,6 +49,46 @@ def write_result_to_xml(out_dir, dt_result, symbol_dict):
         out_path = os.path.join(out_dir, f"{filename}.xml")
         ElementTree(root).write(out_path)
 
+def write_text_result_to_xml(out_dir, dt_result_text, symbol_dict):
+    for filename, objects in dt_result_text.items():
+        root = Element("annotation")
+        filename_node = Element("filename")
+        filename_node.text = f"{filename}.jpg"
+        root.append(filename_node)
+        for object in objects:
+
+            object_node = Element("object")
+
+            string_node = Element("string")
+            string_node.text = object["string"]
+
+            orientation_node = Element("orientation")
+            orientation_node.text = str(90) if object["category_id"] == symbol_dict["text_rotated"] else str(0)
+
+            bndbox_node = Element("bndbox")
+
+            xmin_node = Element("xmin")
+            xmin_node.text = str(object["bbox"][0])
+            ymin_node = Element("ymin")
+            ymin_node.text = str(object["bbox"][1])
+            xmax_node = Element("xmax")
+            xmax_node.text = str(object["bbox"][0] + object["bbox"][2])
+            ymax_node = Element("ymax")
+            ymax_node.text = str(object["bbox"][1] + object["bbox"][3])
+
+            bndbox_node.append(xmin_node)
+            bndbox_node.append(ymin_node)
+            bndbox_node.append(xmax_node)
+            bndbox_node.append(ymax_node)
+
+            object_node.append(string_node)
+            object_node.append(orientation_node)
+            object_node.append(bndbox_node)
+            root.append(object_node)
+
+        indent(root)
+        out_path = os.path.join(out_dir, f"{filename}_text.xml")
+        ElementTree(root).write(out_path)
 
 
 class xml_reader():
