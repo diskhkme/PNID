@@ -1,14 +1,14 @@
 from Visualize.test_result_visualize import draw_test_results_to_img
 from Predict_Postprocess.gt_dt_data import gt_dt_data
 from Predict_Postprocess.evaluate import evaluate
-from Common.pnid_xml import write_result_to_xml
+from Common.pnid_xml import write_symbol_result_to_xml, write_text_result_to_xml
 from Predict_Postprocess.text_recognition.recognize_text import get_text_detection_result, recognize_text_using_tess
 
 # Test 결과의 성능 계산 및 이미지 출력 코드
 
 gt_json_filepath = "D:/Test_Models/PNID/EWP_Data/Drawing_Segment/dataset_5_text_rot/test.json" # 학습 도면 분할시 생성한 test.json 파일 경로
-dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5_text_rot/gfl/epoch_36/epoch_36_result.bbox.json" # prediction 결과로 mmdetection에서 생성된 json 파일 경로
-output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5_text_rot/gfl/epoch_36" # 출력 파일들이 저장될 폴더
+dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5_text_rot/gfl/epoch_12/epoch_12_result.bbox.json" # prediction 결과로 mmdetection에서 생성된 json 파일 경로
+output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_5_text_rot/gfl/epoch_12" # 출력 파일들이 저장될 폴더
 
 drawing_dir = "D:/Test_Models/PNID/EWP_Data/Drawing" # 원본 도면 이미지 폴더
 symbol_xml_dir = "D:/Test_Models/PNID/EWP_Data/SymbolXML" # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
@@ -51,10 +51,12 @@ if include_text_as_class == True:
     dt_result_text = recognize_text_using_tess(drawing_dir, dt_result_after_nms_text_only, text_img_margin_ratio, symbol_dict)
     gt_dt_result.dt_result_text_recognition = dt_result_text
 
-# --- PNID XML 형식으로 파일 출력 (TODO : Text recognition 결과 함께 출력)
+# --- PNID XML 형식으로 파일 출력
 #   : (주로) dt_result_after_nms를 출력하며, 필요에 따라 다른 단계의 데이터도 PNID XML형식으로 출력 가능
-write_result_to_xml(output_dir, gt_dt_result.dt_result_after_nms, symbol_dict)
+write_symbol_result_to_xml(output_dir, gt_dt_result.dt_result_after_nms, symbol_dict)
+write_text_result_to_xml(output_dir, gt_dt_result.dt_result_text_recognition, symbol_dict)
 
 # --- 가시적으로 확인하기 위한 이미지 도면 출력
+#   : 8번의 경우 텍스트 인식이 되지 않은 경우 출력 불가
 draw_test_results_to_img(gt_dt_result, gt_to_dt_match_dict, dt_to_gt_match_dict,
                          drawing_dir, output_dir, modes=(1,2,3,4,5,6,7,8), thickness=5)

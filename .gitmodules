@@ -1,0 +1,3 @@
+[submodule "PNID_GUI"]
+	path = PNID_GUI
+	url = https://github.com/mijoo308/PNID_GUI.git

@@ -71,6 +71,8 @@ def draw_test_results_to_img(eval_data, gt_to_dt_match_dict, dt_to_gt_match_dict
                 bboxes_per_image = [dt_result_after_nms[img_filename_key][i] for i in range(dt_num_in_current_img) if i not in dt_to_gt_match_dict[img_filename_key]]
                 draw_additional_data = [x["category_id"] for x in bboxes_per_image]
             elif mode == 8:
+                if eval_data.dt_result_text_recognition == None:
+                    continue
                 text_result = eval_data.dt_result_text_recognition
                 bboxes_per_image = text_result[img_filename_key]
                 draw_additional_data = [x["string"] for x in text_result[img_filename_key]]
