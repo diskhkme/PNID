@@ -18,7 +18,7 @@ def write_coco_annotation(out_path, annotation_data, symbol_dict, segment_params
         data["images"].append({"file_name" : img_name, "width" : segment_params[0], "height" : segment_params[1], "id" : idx})
 
     data["annotations"] = []
-    instance_id = 0
+    instance_id = 1
     for annotation in annotation_data: # [drawingname, symname, minx, miny, maxx, maxy]
         if annotation[1] < 0: # test/val set을 위한 예외 case
             continue
