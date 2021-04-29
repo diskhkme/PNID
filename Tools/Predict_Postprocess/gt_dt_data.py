@@ -23,7 +23,7 @@ class gt_dt_data():
     """
     def __init__(self, gt_json_filepath, dt_json_filepath, drawing_dir, symbol_xml_dir, symbol_filepath, include_text_as_class, include_text_orientation_as_class, text_xml_dir,
                  drawing_resize_scale, stride_w, stride_h,
-                 score_threshold = 0.5, nms_iou_threshold = 0.1):
+                 score_threshold = 0.5, nms_iou_threshold = 0.1, adaptive_thr_dict=None):
         self.drawing_dir = drawing_dir
         self.symbol_xml_dir = symbol_xml_dir
         self.drawing_resize_scale = drawing_resize_scale
@@ -35,6 +35,7 @@ class gt_dt_data():
 
         self.symbol_dict = read_symbol_txt(symbol_filepath, include_text_as_class, include_text_orientation_as_class)
         self.nms_iou_threshold = nms_iou_threshold
+        self.adaptive_thr_dict = adaptive_thr_dict
 
         # 주요 생성 데이터-----------
         # 모든 데이터는 도면이름을 Key로, box 정보들을 value로 가지고 있음
@@ -143,13 +144,13 @@ class gt_dt_data():
         filename_to_global_bbox_dict_after_nms = {}
         for img, bbox in self.dt_result.items():
 
-            nms_result = self.non_max_suppression_fast(bbox, nms_threshold)
+            nms_result = self.non_max_suppression_fast(bbox, nms_threshold, adaptive_thr_dict=self.adaptive_thr_dict)
             filename_to_global_bbox_dict_after_nms[img] = nms_result
 
         return filename_to_global_bbox_dict_after_nms
 
     # TODO : mmcv의 SoftNMX 사용
-    def non_max_suppression_fast(self, result_boxes, iou_threshold, perClass=True):
+    def non_max_suppression_fast(self, result_boxes, iou_threshold, perClass=True, adaptive_thr_dict=None):
         """ 도면별 Box list에 대해 NMS 수행
 
         Arguments:
@@ -203,7 +204,11 @@ class gt_dt_data():
             iou = intersection / (area[idxs[:last]] + area[idxs[last]] - intersection)
 
             if perClass:  # perClass == true인 경우에는, class index가 같은 경우에만 삭제 대상
-                outCheck = (iou > iou_threshold)
+                if adaptive_thr_dict is not None and c in adaptive_thr_dict.keys():
+                    iou_threshold_for_adaptive_thr = adaptive_thr_dict[c]
+                    outCheck = (iou > iou_threshold_for_adaptive_thr)
+                else:
+                    outCheck = (iou > iou_threshold)
                 sameClassCheck = (classes[idxs[:last]] == c)
                 allCheck = sameClassCheck & outCheck
                 idxs = np.delete(idxs, np.concatenate(([last], np.where(allCheck)[0])))
