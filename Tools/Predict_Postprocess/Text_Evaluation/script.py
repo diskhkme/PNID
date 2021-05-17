@@ -667,7 +667,7 @@ def eval_single_result(gt_file, det_file):
     sample_result.evaluation()
     return sample_result.to_dict()
 
-def parse_xml_to_txt(xml_file):
+def parse_xml_to_txt(xml_file, type):
     name = xml_file.split('.xml')[0]
 
     fp = open(name + '.txt', 'w', encoding='utf-8')
@@ -675,21 +675,43 @@ def parse_xml_to_txt(xml_file):
     annotation = tree.getroot()
     objects = annotation.findall('object')
 
-    for ob in objects:
-        string = ob[0].text
-        orientation = ob[1].text
-        bndbox = ob[2]
-        L = bndbox[0].text
-        T = bndbox[1].text
-        R = bndbox[2].text
-        B = bndbox[3].text
+    if type == 'gt':
+        for ob in objects:
+            string = ob[1].text
+            # orientation = ob[2].text
+            bndbox = ob[3]
+            L = bndbox[0].text
+            T = bndbox[1].text
+            R = bndbox[2].text
+            B = bndbox[3].text
 
-        data = L + ',' + T + ',' + R + ',' + B + ',' + string + '\n'
+            data = L + ',' + T + ',' + R + ',' + B + ',' + string + '\n'
 
-        fp.write(data)
-    fp.close()
+            fp.write(data)
+        fp.close()
 
-    return fp
+        return fp
+
+    elif type == 'res':
+        for ob in objects:
+            string = ob[0].text
+            orientation = ob[1].text
+            bndbox = ob[2]
+            L = bndbox[0].text
+            T = bndbox[1].text
+            R = bndbox[2].text
+            B = bndbox[3].text
+
+            data = L + ',' + T + ',' + R + ',' + B + ',' + string + '\n'
+
+            fp.write(data)
+        fp.close()
+
+        return fp
+
+
+
+
 
 def cleval_evaluation(gt_file, submit_file):
     """
@@ -711,8 +733,8 @@ def cleval_evaluation(gt_file, submit_file):
         gt_name = gt_file.split('.xml')[0] + ".txt"
         sb_name = submit_file.split('.xml')[0] + ".txt"
 
-        parse_xml_to_txt(gt_file)
-        parse_xml_to_txt(submit_file)
+        parse_xml_to_txt(gt_file, type='gt')
+        parse_xml_to_txt(submit_file, type='res')
 
         gt = open(gt_name, 'r', encoding='utf-8')
         det = open(sb_name, 'r', encoding='utf-8')
