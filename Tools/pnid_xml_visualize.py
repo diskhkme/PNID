@@ -5,10 +5,10 @@ from Visualize.image_drawing import draw_bbox_from_bbox_list
 
 # XML 데이터 검증을 위한 가시화 코드
 
-xml_dir = "D:/Test_Models/PNID/EWP_Data/SymbolXML/"
-drawing_img_dir = "D:/Test_Models/PNID/EWP_Data/Drawing/"
-output_img_dir = "D:/Test_Models/PNID/EWP_Data/Drawing_XML_Validation/"
-is_text_xml = False
+xml_dir = "D:/Test_Models/PNID/HyundaiEng/210518_Data/Text_XML"
+drawing_img_dir = "D:/Test_Models/PNID/HyundaiEng/210518_Data/Drawing/JPG"
+output_img_dir = "D:/Test_Models/PNID/HyundaiEng/210518_Data/Text_XML_Visualize"
+is_text_xml = True
 
 xml_filenames = os.listdir(xml_dir)
 

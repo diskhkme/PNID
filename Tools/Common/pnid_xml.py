@@ -173,10 +173,14 @@ class text_xml_reader(xml_reader):
         obj_to_remove = []
         for object in self.root.iter("object"):
             filename_tag = object.findtext("filename")
-            xmin = int(object.find("bndbox").findtext("xmin"))
-            xmax = int(object.find("bndbox").findtext("xmax"))
-            ymin = int(object.find("bndbox").findtext("ymin"))
-            ymax = int(object.find("bndbox").findtext("ymax"))
+            try:
+                xmin = int(object.find("bndbox").findtext("xmin"))
+                xmax = int(object.find("bndbox").findtext("xmax"))
+                ymin = int(object.find("bndbox").findtext("ymin"))
+                ymax = int(object.find("bndbox").findtext("ymax"))
+            except:
+                obj_to_remove.append(object)
+
             string = object.findtext("string")
             orientation = int(math.ceil(float(object.findtext("orientation"))))
 
@@ -221,26 +225,37 @@ class text_xml_reader(xml_reader):
 
             for object in self.root.iter("object"):
                 filename_tag = object.findtext("filename")
-                xmin = int(object.find("bndbox").findtext("xmin"))
-                xmax = int(object.find("bndbox").findtext("xmax"))
-                ymin = int(object.find("bndbox").findtext("ymin"))
-                ymax = int(object.find("bndbox").findtext("ymax"))
+                try:
+                    xmin = int(object.find("bndbox").findtext("xmin"))
+                    xmax = int(object.find("bndbox").findtext("xmax"))
+                    ymin = int(object.find("bndbox").findtext("ymin"))
+                    ymax = int(object.find("bndbox").findtext("ymax"))
+                except:
+                    continue
+
                 string = object.findtext("string")
                 orientation = int(math.ceil(float(object.findtext("orientation"))))
 
                 sub_img = dilated_img[ymin:ymax, xmin:xmax]
                 if orientation == 0:
                     pixel_sum_along_height = np.sum(sub_img, axis=0)
+                    first_original_value = xmin
+                    last_original_value = xmax
                 elif orientation == 90:
                     pixel_sum_along_height = np.sum(sub_img, axis=1)
-
+                    first_original_value = ymin
+                    last_original_value = ymax
                 try:
                     first = np.min(np.nonzero(pixel_sum_along_height))
                     last = np.max(np.nonzero(pixel_sum_along_height))
                 except:
                     continue
 
-                assert (first < last), "something wrong..."
+                # if (first < last):
+                #     # 텍스트 박스인데 안에 픽셀이 없다는 의미? 그냥 원래대로 복구
+                #     first = first_original_value
+                #     last = last_original_value
+
 
                 for i in range(len(pixel_sum_along_height)):
                     if pixel_sum_along_height[i] != 0:
