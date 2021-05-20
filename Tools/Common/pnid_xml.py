@@ -16,9 +16,10 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict):
         root.append(filename_node)
         for object in objects:
 
-            # 텍스트는 별도 XML로 출력
-            if object["category_id"] == symbol_dict["text"] or object["category_id"] == symbol_dict["text_rotated"]:
-                continue
+            # text가 key에 있는경우, # 텍스트는 별도 XML로 출력
+            if "text" in symbol_dict:
+                if object["category_id"] == symbol_dict["text"] or object["category_id"] == symbol_dict["text_rotated"]:
+                    continue
 
             object_node = Element("object")
 

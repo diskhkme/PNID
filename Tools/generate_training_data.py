@@ -11,7 +11,7 @@ from Data_Generator.write_coco_annotation import write_coco_annotation
 
 base_dir = "D:/Test_Models/PNID/EWP_Data/"
 drawing_dir = base_dir + "Drawing"
-drawing_segment_dir = base_dir + "Drawing_Segment/dataset_5_text_rot"
+drawing_segment_dir = base_dir + "Drawing_Segment/dataset_1_3scale"
 symbol_xml_dir = base_dir + "SymbolXML"
 text_xml_dir = base_dir + "TextXML_All_Corrected"
 train_drawings = ['KNU-A-22300-001-02', 'KNU-A-36120-001-01', 'KNU-A-36120-001-02',
@@ -45,8 +45,8 @@ test_drawings = ["KNU-A-22300-001-04", "KNU-A-36420-014-03", "KNU-A-71710-003-02
 ignore_drawing = ["KNU-B-11600-001-03"]
 symbol_txt_path = base_dir + "EWP_SymbolClass_sym_only.txt"
 
-include_text_as_class = True # Text를 별도의 클래스로 포함할 것인지 {"text"}
-include_text_orientation_as_class = True # 세로 문자열을 또다른 별도의 클래스로 포함할 것인지 {"text_rotated"}
+include_text_as_class = False # Text를 별도의 클래스로 포함할 것인지 {"text"}
+include_text_orientation_as_class = False # 세로 문자열을 또다른 별도의 클래스로 포함할 것인지 {"text_rotated"}
 
 segment_params = [800, 800, 300, 300] # width_size, height_size, width_stride, height_stride
 drawing_resize_scale = 0.5
@@ -67,14 +67,43 @@ test_xmls = [os.path.join(symbol_xml_dir, f"{x}.xml") for x in test_drawings]
 # train_xmls = xml_paths_without_test[0:train_count]
 # val_xmls = xml_paths_without_test[train_count:]
 
-# TODO : Train/val은 랜덤 셔플을 하기때문에 항상 한세트로 만들어야함. 코드에서 강제 필요
+def multi_bbox_train_expand(annotation_data, additional_scales=[1.2,1.4]):
+    expanded_annotation = []
+    for annotation in annotation_data:
+        expanded_annotation.append(annotation) # 1.0 scale은 무조건 포함
+
+        for scale in additional_scales:
+            scaled_annotation = annotation.copy()
+            minx = scaled_annotation[2]
+            miny = scaled_annotation[3]
+            maxx = scaled_annotation[4]
+            maxy = scaled_annotation[5]
+            midx = (minx + maxx)/2
+            midy = (miny + maxy)/2
+            half_width_with_scale = ((maxx-minx)*scale)/2
+            half_height_with_scale = ((maxy - miny) * scale) / 2
+
+            scaled_annotation[2] = round(midx - half_width_with_scale)
+            scaled_annotation[3] = round(midy - half_height_with_scale)
+            scaled_annotation[4] = round(midx + half_width_with_scale)
+            scaled_annotation[5] = round(midy + half_height_with_scale)
+
+            expanded_annotation.append(scaled_annotation)
+
+    return expanded_annotation
+
+
 val_annotation_data = generate_segmented_data(val_xmls, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir,
                                               symbol_dict, include_text_as_class, include_text_orientation_as_class, drawing_resize_scale, "val")
+# TODO : multi_bbox_train_expand는 학습 데이터에 box크기 1,1.2,1.4가 모두 있을때 어떨지 결과를 보기 위한 실험임. 효과가 없다면 추후 삭제 가능. 이론적으로는 효과가 없을 것으로 생각됨
+val_annotation_data = multi_bbox_train_expand(val_annotation_data)
 write_coco_annotation(os.path.join(drawing_segment_dir,"val.json"), val_annotation_data, symbol_dict, segment_params)
 train_annotation_data = generate_segmented_data(train_xmls, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir,
                                                 symbol_dict, include_text_as_class, include_text_orientation_as_class, drawing_resize_scale, "train")
+train_annotation_data = multi_bbox_train_expand(train_annotation_data)
 write_coco_annotation(os.path.join(drawing_segment_dir,"train.json"), train_annotation_data, symbol_dict, segment_params)
 
 test_annotation_data = generate_segmented_data(test_xmls, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir,
                                                symbol_dict, include_text_as_class, include_text_orientation_as_class, drawing_resize_scale, "test")
+test_annotation_data = multi_bbox_train_expand(test_annotation_data)
 write_coco_annotation(os.path.join(drawing_segment_dir,"test.json"), test_annotation_data, symbol_dict, segment_params)

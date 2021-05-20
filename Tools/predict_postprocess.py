@@ -6,20 +6,20 @@ from Predict_Postprocess.text_recognition.recognize_text import get_text_detecti
 
 # Test 결과의 성능 계산 및 이미지 출력 코드
 
-gt_json_filepath = "D:/EWP_Data/Drawing_Segment/dataset_4_text_rot/test.json"  # 학습 도면 분할시 생성한 test.json 파일 경로
-dt_json_filepath = "D:/EWP_Data/Experiment_Add_Text_visualization/gfl_r50_dataset_4_text_rot.bbox.json"  # prediction 결과로 mmdetection에서 생성된 json 파일 경로
-output_dir = "D:/EWP_Data/Experiment_Add_Text_visualization/Ex1_gfl_r50_dataset_4_text_rot_epoch_12_AT"  # 출력 파일들이 저장될 폴더
+gt_json_filepath = "D:/Test_Models/PNID/EWP_Data/Drawing_Segment/dataset_1_3scale/test.json"  # 학습 도면 분할시 생성한 test.json 파일 경로
+dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_1_3scale/gfl/epoch_12/epoch_12_result.bbox.json"  # prediction 결과로 mmdetection에서 생성된 json 파일 경로
+output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_1_3scale/gfl/epoch_12/"  # 출력 파일들이 저장될 폴더
 
-drawing_dir = "D:/EWP_Data/Drawing"  # 원본 도면 이미지 폴더
-symbol_xml_dir = "D:/EWP_Data/SymbolXML"  # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
-text_xml_dir = "D:/EWP_Data/TextXML_All_Corrected"  # 원본 도면 이미지와 함께 제공된 Text XML 폴더
-symbol_filepath = "D:/EWP_Data/EWP_SymbolClass_sym_only.txt"  # (방향 제거된) symbol index txt 파일 경로
+drawing_dir = "D:/Test_Models/PNID/EWP_Data/Drawing"  # 원본 도면 이미지 폴더
+symbol_xml_dir = "D:/Test_Models/PNID/EWP_Data/SymbolXML"  # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
+text_xml_dir = "D:/Test_Models/PNID/EWP_Data/TextXML_All_Corrected"  # 원본 도면 이미지와 함께 제공된 Text XML 폴더
+symbol_filepath = "D:/Test_Models/PNID/EWP_Data/EWP_SymbolClass_sym_only.txt"  # (방향 제거된) symbol index txt 파일 경로
 
-include_text_as_class = True
-include_text_orientation_as_class = True
+include_text_as_class = False
+include_text_orientation_as_class = False
 stride_w = 300  # 학습 도면 분할시에 사용한 stride
 stride_h = 300
-drawing_resize_scale = 1.0  # 학습 도면 분할시에 사용한 scaling factor (절반 크기로 줄였으면 0.5)
+drawing_resize_scale = 0.5  # 학습 도면 분할시에 사용한 scaling factor (절반 크기로 줄였으면 0.5)
 score_threshold = 0.5  # score filtering threshold
 nms_threshold = 0.0
 matching_iou_threshold = 0.5  # 매칭(정답) 처리할 IOU threshold
@@ -63,9 +63,10 @@ if include_text_as_class == True:
 # --- PNID XML 형식으로 파일 출력
 #   : (주로) dt_result_after_nms를 출력하며, 필요에 따라 다른 단계의 데이터도 PNID XML형식으로 출력 가능
 write_symbol_result_to_xml(output_dir, gt_dt_result.dt_result_after_nms, symbol_dict)
-write_text_result_to_xml(output_dir, gt_dt_result.dt_result_text_recognition, symbol_dict)
+if include_text_as_class == True:
+    write_text_result_to_xml(output_dir, gt_dt_result.dt_result_text_recognition, symbol_dict)
 
 # --- 가시적으로 확인하기 위한 이미지 도면 출력
 #   : 8번의 경우 텍스트 인식이 되지 않은 경우 출력 불가
 draw_test_results_to_img(gt_dt_result, gt_to_dt_match_dict, dt_to_gt_match_dict,
-                         drawing_dir, output_dir, modes=(1, 2, 3, 4, 5, 6, 7, 8), thickness=5)
+                         drawing_dir, output_dir, modes=(1, 2, 3, 4, 5, 6, 7), thickness=5)
