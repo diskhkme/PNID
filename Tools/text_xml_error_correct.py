@@ -7,7 +7,7 @@ from Common.pnid_xml import text_xml_reader
 
 text_xml_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/_Text_XML_before_correction"
 drawing_img_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Drawing/JPG"
-processed_text_xml_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Text_XML/"
+processed_text_xml_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/TextXML/"
 
 text_xmls = [os.path.join(text_xml_dir, x) for x in os.listdir(text_xml_dir)]
 

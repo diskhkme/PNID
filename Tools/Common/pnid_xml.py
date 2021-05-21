@@ -235,6 +235,7 @@ class text_xml_reader(xml_reader):
 
                     obj_to_remove.append(object)
 
+        obj_to_remove = set(obj_to_remove)
         for obj in obj_to_remove:
             self.root.remove(obj)
 
