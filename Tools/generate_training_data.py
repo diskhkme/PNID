@@ -9,51 +9,39 @@ from Data_Generator.write_coco_annotation import write_coco_annotation
 # 이때, train의 경우 심볼(또는 옵션에 따라 심볼+텍스트)가 존재하지 않는 도면은 저장하지 않음
 # 단 test/val 도면의 경우 심볼이 존재하지 않아도 저장함
 
-base_dir = "D:/Test_Models/PNID/EWP_Data/"
+base_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/"
 drawing_dir = base_dir + "Drawing"
-drawing_segment_dir = base_dir + "Drawing_Segment/dataset_1_3scale"
+drawing_segment_dir = base_dir + "Drawing_Segment/Dataset_800_300_0.5_w_Text_Rotated"
 symbol_xml_dir = base_dir + "SymbolXML"
-text_xml_dir = base_dir + "TextXML_All_Corrected"
-train_drawings = ['KNU-A-22300-001-02', 'KNU-A-36120-001-01', 'KNU-A-36120-001-02',
-                  'KNU-A-36120-001-03', 'KNU-A-36420-011-02', 'KNU-A-36420-012-01',
-                  'KNU-A-36420-012-02', 'KNU-A-36420-012-03', 'KNU-A-36420-012-04',
-                  'KNU-A-36420-012-05', 'KNU-A-36420-014-01', 'KNU-A-36420-014-02',
-                  'KNU-A-36420-014-04', 'KNU-A-36420-018-01', 'KNU-A-36420-018-02',
-                  'KNU-A-36420-018-03', 'KNU-A-36420-018-04', 'KNU-A-71120-001-01',
-                  'KNU-A-71120-001-02', 'KNU-A-71120-001-03', 'KNU-A-71120-002-01',
-                  'KNU-A-71120-002-02', 'KNU-A-71710-001-01', 'KNU-A-71710-001-02',
-                  'KNU-A-71710-003-03', 'KNU-B-11600-001-01', 'KNU-B-11600-001-02',
-                  'KNU-B-11600-001-04', 'KNU-B-11600-002-01', 'KNU-B-15100-002-01',
-                  'KNU-B-15100-002-02', 'KNU-B-15100-002-03', 'KNU-B-36130-001-01',
-                  'KNU-B-36130-001-02', 'KNU-B-36130-001-03', 'KNU-B-36130-002-01',
-                  'KNU-B-36130-002-02', 'KNU-B-36130-003-02', 'KNU-B-36130-004-01',
-                  'KNU-B-36130-004-02', 'KNU-B-36300-001-01', 'KNU-B-36300-001-02',
-                  'KNU-B-36300-001-03', 'KNU-B-36420-015-01', 'KNU-B-36420-015-02',
-                  'KNU-B-36420-015-03', 'KNU-B-36420-015-04', 'KNU-B-36420-015-05',
-                  'KNU-B-36420-019-02', 'KNU-B-36420-019-03', 'KNU-B-36610-002-01',
-                  'KNU-B-36610-002-02', 'KNU-B-36610-002-03', 'KNU-B-36610-002-04',
-                  'KNU-B-36610-002-06', 'KNU-B-36610-004-02', 'KNU-B-36610-004-03',
-                  'KNU-B-36610-004-04', 'KNU-B-36610-004-05', 'KNU-B-36610-005-01',
-                  'KNU-B-36610-005-02', 'KNU-B-36610-005-04', 'KNU-B-36610-005-05',
-                  'KNU-B-36610-005-06', 'KNU-B-36610-005-07']
-val_drawings = ['KNU-A-22300-001-01', 'KNU-A-22300-001-03', 'KNU-A-36420-011-01',
-                'KNU-A-71710-003-01', 'KNU-B-11600-002-02', 'KNU-B-11600-003-01',
-                'KNU-B-36130-003-01', 'KNU-B-36420-019-01']
-test_drawings = ["KNU-A-22300-001-04", "KNU-A-36420-014-03", "KNU-A-71710-003-02",
-                 "KNU-B-11600-002-03", "KNU-B-36420-019-04", "KNU-B-36610-002-05",
-                 "KNU-B-36610-004-01", "KNU-B-36610-005-03"]
-ignore_drawing = ["KNU-B-11600-001-03"]
-symbol_txt_path = base_dir + "EWP_SymbolClass_sym_only.txt"
+text_xml_dir = base_dir + "TextXML"
 
-include_text_as_class = False # Text를 별도의 클래스로 포함할 것인지 {"text"}
-include_text_orientation_as_class = False # 세로 문자열을 또다른 별도의 클래스로 포함할 것인지 {"text_rotated"}
+val_drawings = ['26071-200-M6-052-00004', '26071-200-M6-052-00013', '26071-200-M6-052-00015', '26071-200-M6-052-00021',
+                '26071-200-M6-052-00032', '26071-200-M6-052-00036', '26071-200-M6-052-00048', '26071-200-M6-052-00074',
+                '26071-200-M6-052-00081', '26071-200-M6-052-00083', '26071-200-M6-052-00084', '26071-200-M6-052-00086',
+                '26071-200-M6-052-00101', '26071-200-M6-052-00115', '26071-300-M6-053-00004', '26071-300-M6-053-00007',
+                '26071-300-M6-053-00021', '26071-300-M6-053-00301', '26071-500-M6-059-00021', '26071-500-M6-059-00024']
+test_drawings = ['26071-200-M6-052-00002', '26071-200-M6-052-00005', '26071-200-M6-052-00006', '26071-200-M6-052-00056',
+                '26071-200-M6-052-00077', '26071-200-M6-052-00107', '26071-200-M6-052-00120', '26071-300-M6-053-00003',
+                '26071-300-M6-053-00025', '26071-300-M6-053-00027', '26071-300-M6-053-00263', '26071-300-M6-053-00271',
+                '26071-300-M6-053-00302', '26071-300-M6-053-00305', '26071-300-M6-053-00310', '26071-500-M6-059-00007',
+                '26071-500-M6-059-00009', '26071-500-M6-059-00014', '26071-500-M6-059-00017', '26071-500-M6-059-00022']
+ignore_drawing = []
+train_drawings = [x.split(".")[0] for x in os.listdir(symbol_xml_dir)
+                  if x.split(".")[0] not in test_drawings and
+                  x.split(".")[0] not in val_drawings and
+                  x.split(".")[0] not in ignore_drawing ]
+
+symbol_txt_path = base_dir + "Hyundai_SymbolClass_Sym_Only.txt"
+
+include_text_as_class = True # Text를 별도의 클래스로 포함할 것인지 {"text"}
+include_text_orientation_as_class = True # 세로 문자열을 또다른 별도의 클래스로 포함할 것인지 {"text_rotated"},
+# TODO: 현대ENG 데이터에는 45도 회전 데이터도 있어서 {"text_rotated_45"} 심볼도 추가. 인식 이후 과정에서 문제가 없는지 테스트 필요함
 
 segment_params = [800, 800, 300, 300] # width_size, height_size, width_stride, height_stride
 drawing_resize_scale = 0.5
 
 symbol_dict = read_symbol_txt(symbol_txt_path, include_text_as_class, include_text_orientation_as_class)
 
-xml_paths_without_test = [os.path.join(symbol_xml_dir, x) for x in os.listdir(symbol_xml_dir) if x.split(".")[0] not in test_drawings and x.split(".")[0] not in ignore_drawing]
 
 train_xmls = [os.path.join(symbol_xml_dir, f"{x}.xml") for x in train_drawings]
 val_xmls = [os.path.join(symbol_xml_dir, f"{x}.xml") for x in val_drawings]
@@ -96,14 +84,14 @@ def multi_bbox_train_expand(annotation_data, additional_scales=[1.2,1.4]):
 val_annotation_data = generate_segmented_data(val_xmls, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir,
                                               symbol_dict, include_text_as_class, include_text_orientation_as_class, drawing_resize_scale, "val")
 # TODO : multi_bbox_train_expand는 학습 데이터에 box크기 1,1.2,1.4가 모두 있을때 어떨지 결과를 보기 위한 실험임. 효과가 없다면 추후 삭제 가능. 이론적으로는 효과가 없을 것으로 생각됨
-val_annotation_data = multi_bbox_train_expand(val_annotation_data)
+#val_annotation_data = multi_bbox_train_expand(val_annotation_data)
 write_coco_annotation(os.path.join(drawing_segment_dir,"val.json"), val_annotation_data, symbol_dict, segment_params)
 train_annotation_data = generate_segmented_data(train_xmls, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir,
                                                 symbol_dict, include_text_as_class, include_text_orientation_as_class, drawing_resize_scale, "train")
-train_annotation_data = multi_bbox_train_expand(train_annotation_data)
+#train_annotation_data = multi_bbox_train_expand(train_annotation_data)
 write_coco_annotation(os.path.join(drawing_segment_dir,"train.json"), train_annotation_data, symbol_dict, segment_params)
 
 test_annotation_data = generate_segmented_data(test_xmls, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir,
                                                symbol_dict, include_text_as_class, include_text_orientation_as_class, drawing_resize_scale, "test")
-test_annotation_data = multi_bbox_train_expand(test_annotation_data)
+#test_annotation_data = multi_bbox_train_expand(test_annotation_data)
 write_coco_annotation(os.path.join(drawing_segment_dir,"test.json"), test_annotation_data, symbol_dict, segment_params)

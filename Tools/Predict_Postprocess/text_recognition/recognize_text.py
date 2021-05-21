@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt # debug purpose
 def get_text_detection_result(dt_result, symbol_dict):
     bboxes_text = {}
     for filename, bboxes in dt_result.items():
-        bboxes_text[filename] = [x for x in bboxes if x["category_id"] == symbol_dict["text"] or x["category_id"] == symbol_dict["text_rotated"]]
+        bboxes_text[filename] = [x for x in bboxes if x["category_id"] == symbol_dict["text"] or x["category_id"] == symbol_dict["text_rotated"] or x["category_id"] == symbol_dict["text_rotated_45"]]
 
     return bboxes_text
 
@@ -39,7 +39,8 @@ def recognize_text_using_tess(drawing_dir, dt_result_after_nms_text_only, text_i
 
                 if bboxes[i]["category_id"] == symbol_dict["text_rotated"]: # 세로 문자열로 판단, "text_rotated 카테고리일경우"
                     sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)
-
+                if bboxes[i]["category_id"] == symbol_dict["text_rotated_45"]: # 45도 문자열로 판단, "text_rotated_45 카테고리일경우"
+                    sub_img = cv2.rotate(sub_img, cv2.ROTATE_45_CLOCKWISE)
 
 
                 result_str = pytesseract.image_to_data(sub_img, config="--oem 3 --psm 6")

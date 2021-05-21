@@ -18,7 +18,7 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict):
 
             # text가 key에 있는경우, # 텍스트는 별도 XML로 출력
             if "text" in symbol_dict:
-                if object["category_id"] == symbol_dict["text"] or object["category_id"] == symbol_dict["text_rotated"]:
+                if object["category_id"] == symbol_dict["text"] or object["category_id"] == symbol_dict["text_rotated"] or object["category_id"] == symbol_dict["text_rotated_45"]:
                     continue
 
             object_node = Element("object")
@@ -64,7 +64,12 @@ def write_text_result_to_xml(out_dir, dt_result_text, symbol_dict):
             string_node.text = object["string"]
 
             orientation_node = Element("orientation")
-            orientation_node.text = str(90) if object["category_id"] == symbol_dict["text_rotated"] else str(0)
+            if object["category_id"] == symbol_dict["text_rotated"]:
+                orientation_node.text = str(90)
+            elif object["category_id"] == symbol_dict["text_rotated_45"]:
+                orientation_node.text = str(45)
+            else:
+                orientation_node.text = str(0)
 
             bndbox_node = Element("bndbox")
 

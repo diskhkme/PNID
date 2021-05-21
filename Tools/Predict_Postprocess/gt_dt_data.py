@@ -92,6 +92,9 @@ class gt_dt_data():
                         converted_text_object_list = [["text", x[1], x[2], x[3], x[4]] for x in text_object_list if x[5] == 0]
                         converted_text_object_list += [["text_rotated", x[1], x[2], x[3], x[4]] for x in text_object_list if
                                                       x[5] == 90]
+                        converted_text_object_list += [["text_rotated_45", x[1], x[2], x[3], x[4]] for x in
+                                                       text_object_list if
+                                                       x[5] == 45]
                     else:
                         converted_text_object_list = [["text", x[1], x[2], x[3], x[4]] for x in text_object_list]
                     object_list = object_list + converted_text_object_list

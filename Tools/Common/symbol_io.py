@@ -17,6 +17,7 @@ def read_symbol_txt(filename, include_text_as_class, include_text_orientation_as
 
     if include_text_orientation_as_class == True:
         class_name_to_index_dict["text_rotated"] = len(class_name_to_index_dict.items())
+        class_name_to_index_dict["text_rotated_45"] = len(class_name_to_index_dict.items())
 
     return class_name_to_index_dict
 
@@ -48,10 +49,18 @@ def read_symbol_pbtxt(filename, start_id = 0, merge=True):
 
     return symbol_dict, source_symbol_dict
 
-def symbol_simple_dump(filename, symbol_dict):
+def symbol_simple_dump_for_mmdetection(filename, symbol_dict):
     f = open(filename, "w")
     f.write("(\n")
     for key, val in symbol_dict.items():
         f.write(f"\"{key}\",\n")
     f.write(")\n")
+    f.close()
+
+def symbol_simple_dump_to_txt(filename, symbol_dict):
+    f = open(filename, "w")
+    id = 0
+    for key, val in symbol_dict.items():
+        f.write(f"{id}|{key}\n")
+        id += 1
     f.close()
