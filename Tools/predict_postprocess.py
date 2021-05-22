@@ -6,17 +6,17 @@ from Predict_Postprocess.text_recognition.recognize_text import get_text_detecti
 
 # Test 결과의 성능 계산 및 이미지 출력 코드
 
-gt_json_filepath = "D:/Test_Models/PNID/EWP_Data/Drawing_Segment/dataset_1_3scale/test.json"  # 학습 도면 분할시 생성한 test.json 파일 경로
-dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_1_3scale/gfl/epoch_12/epoch_12_result.bbox.json"  # prediction 결과로 mmdetection에서 생성된 json 파일 경로
-output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/dataset_1_3scale/gfl/epoch_12/"  # 출력 파일들이 저장될 폴더
+gt_json_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Drawing_Segment/Dataset_800_300_0.5_w_Text_Rotated/test.json"  # 학습 도면 분할시 생성한 test.json 파일 경로
+dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/Hyundai_Data/Dataset_800_300_0.5_w_Text_Rotated/gfl/epoch_12/epoch_12_result.bbox.json"  # prediction 결과로 mmdetection에서 생성된 json 파일 경로
+output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/Hyundai_Data/Dataset_800_300_0.5_w_Text_Rotated/gfl/epoch_12/"  # 출력 파일들이 저장될 폴더
 
-drawing_dir = "D:/Test_Models/PNID/EWP_Data/Drawing"  # 원본 도면 이미지 폴더
-symbol_xml_dir = "D:/Test_Models/PNID/EWP_Data/SymbolXML"  # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
-text_xml_dir = "D:/Test_Models/PNID/EWP_Data/TextXML_All_Corrected"  # 원본 도면 이미지와 함께 제공된 Text XML 폴더
-symbol_filepath = "D:/Test_Models/PNID/EWP_Data/EWP_SymbolClass_sym_only.txt"  # (방향 제거된) symbol index txt 파일 경로
+drawing_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Drawing"  # 원본 도면 이미지 폴더
+symbol_xml_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/SymbolXML"  # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
+text_xml_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/TextXML"  # 원본 도면 이미지와 함께 제공된 Text XML 폴더
+symbol_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Hyundai_SymbolClass_Sym_Only.txt"  # (방향 제거된) symbol index txt 파일 경로
 
-include_text_as_class = False
-include_text_orientation_as_class = False
+include_text_as_class = True
+include_text_orientation_as_class = True
 stride_w = 300  # 학습 도면 분할시에 사용한 stride
 stride_h = 300
 drawing_resize_scale = 0.5  # 학습 도면 분할시에 사용한 scaling factor (절반 크기로 줄였으면 0.5)
@@ -24,9 +24,9 @@ score_threshold = 0.5  # score filtering threshold
 nms_threshold = 0.0
 matching_iou_threshold = 0.5  # 매칭(정답) 처리할 IOU threshold
 adaptive_thr_dict = {
-    21: 0.2, 34: 0.3, 106: 0.3,
-    110: 0.2, 145: 0.5, 201: 0.2,
-    235: 0.4, 360: 0.2, 386: 0.3, 387: 0.3
+    # 21: 0.2, 34: 0.3, 106: 0.3,
+    # 110: 0.2, 145: 0.5, 201: 0.2,
+    # 235: 0.4, 360: 0.2, 386: 0.3, 387: 0.3
 }
 
 # vertical_threshold = 2 # 세로 문자열로 판단하는 기준. 세로가 가로보다 vertical_threshold 배 이상 길면 세로로 판단

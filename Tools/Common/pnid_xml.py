@@ -127,6 +127,10 @@ class xml_reader():
     def getInfo(self):
         return self.filename, self.width, self.height, self.depth, self.object_list
 
+    def write_xml(self, out_filename):
+        indent(self.tree.getroot())
+        self.tree.write(out_filename)
+
 class symbol_xml_reader(xml_reader):
     """
     심볼 xml 파일 파싱 클래스
@@ -142,39 +146,13 @@ class symbol_xml_reader(xml_reader):
             name = object.findtext("name")
             self.object_list.append([name, xmin, ymin, xmax, ymax])
 
-class text_xml_reader(xml_reader):
-    """
-    텍스트 xml 파일 파싱 클래스
-    """
-    def __init__(self,filepath):
-        super().__init__(filepath)
-
-        for object in self.root.iter("object"):
-            xmin = int(object.find("bndbox").findtext("xmin"))
-            xmax = int(object.find("bndbox").findtext("xmax"))
-            ymin = int(object.find("bndbox").findtext("ymin"))
-            ymax = int(object.find("bndbox").findtext("ymax"))
-            string = object.findtext("string")
-            orientation = int(math.ceil(float(object.findtext("orientation")))) # 89.9991이 있음 (예외)
-            self.object_list.append([string, xmin, ymin, xmax, ymax, orientation])
-
-    def getInfo(self):
-        return self.filename, self.width, self.height, self.depth, self.object_list
-
-    def error_correction(self, img_dir, remove_spacing=True, newline_separation=True,
-                         remove_blank_pixel=True, remove_blank_threshold=0.7, margin=5,
-                         remove_none_string=True, remove_object_out_of_img=True):
+    def error_correction(self, img_dir, remove_empty_object=True, remove_object_out_of_img=True):
         """
-        심볼 xml관련하여 존재하는 오차들을 수정하기 위한 클래스 메소드 # TODO: 별도 모듈로 분할?
+        심볼 xml관련하여 존재하는 오차들을 수정하기 위한 클래스 메소드
 
         Arguments:
             img_dir (string): 도면 이미지가 저장되어 있는 폴더. remove_blank_pixel이 true일때 사용
-            remove_spacing (bool): 문자열 앞뒤의 공백을 trim할 것인지 여부
-            newline_separation (bool): 멀티라인 문자의 경우 \n을 기반으로 박스를 분할할 것인지 여부
-            remove_blank_pixel (bool): 박스가 문자열보다 지나치게 크게 설정된 경우 인식하여 박스를 줄일 것인지 여부
-            remove_blank_threshold (float): 박스 길이 * threshold > 문자열 픽셀 길이일 경우 축소 수행
-            margin (int): 축소한 뒤 margin만큼 박스 길이를 늘림
-            remove_none_string (bool) : string 정보가 없을 때 해당 object를 제거할 것인지 여부
+            remove_empty_object (bool): 빈 객체의 경우 삭제할지 여부
             remove_object_out_of_img (bool) : box 좌표가 도면 밖의 위치일 때 (ex : 좌표값이 음수) 해당 object를 제거할 것인지 여부
 
         Return:
@@ -193,6 +171,71 @@ class text_xml_reader(xml_reader):
                 ymax = int(object.find("bndbox").findtext("ymax"))
             except:
                 obj_to_remove.append(object)
+                continue
+
+            symbol_name = object.findtext("name")
+
+            if remove_empty_object == True:
+                if symbol_name == "":
+                    obj_to_remove.append(object)
+
+            if remove_object_out_of_img == True:
+                if xmin < 0 or ymin < 0 or xmax >= width or ymax >= height:
+                    obj_to_remove.append(object)
+
+        obj_to_remove = set(obj_to_remove)
+        for obj in obj_to_remove:
+            self.root.remove(obj)
+
+class text_xml_reader(xml_reader):
+    """
+    텍스트 xml 파일 파싱 클래스
+    """
+    def __init__(self,filepath):
+        super().__init__(filepath)
+
+        for object in self.root.iter("object"):
+            xmin = int(object.find("bndbox").findtext("xmin"))
+            xmax = int(object.find("bndbox").findtext("xmax"))
+            ymin = int(object.find("bndbox").findtext("ymin"))
+            ymax = int(object.find("bndbox").findtext("ymax"))
+            string = object.findtext("string")
+            orientation = int(math.ceil(float(object.findtext("orientation")))) # 89.9991이 있음 (예외)
+            self.object_list.append([string, xmin, ymin, xmax, ymax, orientation])
+
+    def error_correction(self, img_dir, remove_spacing=True, newline_separation=True,
+                         remove_blank_pixel=True, remove_blank_threshold=0.7, margin=5,
+                         remove_none_string=True, remove_object_out_of_img=True):
+        """
+        텍스트 xml관련하여 존재하는 오차들을 수정하기 위한 클래스 메소드
+
+        Arguments:
+            img_dir (string): 도면 이미지가 저장되어 있는 폴더. remove_blank_pixel이 true일때 사용
+            remove_spacing (bool): 문자열 앞뒤의 공백을 trim할 것인지 여부
+            newline_separation (bool): 멀티라인 문자의 경우 \n을 기반으로 박스를 분할할 것인지 여부
+            remove_blank_pixel (bool): 박스가 문자열보다 지나치게 크게 설정된 경우 인식하여 박스를 줄일 것인지 여부
+            remove_blank_threshold (float): 박스 길이 * threshold > 문자열 픽셀 길이일 경우 축소 수행
+            margin (int): 축소한 뒤 margin만큼 박스 길이를 늘림
+            remove_none_string (bool) : string 정보가 없을 때 해당 object를 제거할 것인지 여부
+            remove_object_out_of_img (bool) : box 좌표가 도면 밖의 위치일 때 (ex : 좌표값이 음수) 해당 object를 제거할 것인지 여부
+
+        Return:
+            None (self.object_list에서 제거되야 할 object들이 삭제됨)
+        """
+
+        filename, width, height, depth, object_list = self.getInfo()
+
+        obj_to_remove = []
+        for object in self.root.iter("object"):
+            filename_tag = object.findtext("filename")
+            try:
+                xmin = int(object.find("bndbox").findtext("xmin"))
+                xmax = int(object.find("bndbox").findtext("xmax"))
+                ymin = int(object.find("bndbox").findtext("ymin"))
+                ymax = int(object.find("bndbox").findtext("ymax"))
+            except:
+                obj_to_remove.append(object)
+                continue
 
             string = object.findtext("string")
             orientation = int(math.ceil(float(object.findtext("orientation"))))
@@ -202,7 +245,7 @@ class text_xml_reader(xml_reader):
                     obj_to_remove.append(object)
 
             if remove_object_out_of_img == True:
-                if xmin < 0 or ymin < 0 or xmax > width or ymax > height:
+                if xmin < 0 or ymin < 0 or xmax >= width or ymax >= height:
                     obj_to_remove.append(object)
 
             if remove_spacing == True:
@@ -296,10 +339,6 @@ class text_xml_reader(xml_reader):
                     if (ymax - ymin) * remove_blank_threshold > (last - first):
                         object.find("bndbox").find("ymin").text = str(ymin + first - margin)
                         object.find("bndbox").find("ymax").text = str(ymin + last + margin)
-
-    def write_xml(self, out_filename):
-        indent(self.tree.getroot())
-        self.tree.write(out_filename)
 
 def indent(elem, level=0):  # 자료 출처 https://goo.gl/J8VoDK
     """ XML의 들여쓰기 포함한 출력을 위한 함수
