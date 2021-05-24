@@ -3,25 +3,28 @@ from Predict_Postprocess.gt_dt_data import gt_dt_data
 from Predict_Postprocess.evaluate import evaluate
 from Common.pnid_xml import write_symbol_result_to_xml, write_text_result_to_xml
 from Predict_Postprocess.text_recognition.recognize_text import get_text_detection_result, recognize_text_using_tess
+from Common.symbol_io import read_symbol_type_txt
 
 # Test 결과의 성능 계산 및 이미지 출력 코드
 
-gt_json_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Drawing_Segment/Dataset_800_300_1.0_wo_Text/test.json"  # 학습 도면 분할시 생성한 test.json 파일 경로
-dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/Hyundai_Data/Dataset_800_300_1.0_wo_Text/gfl/epoch_12/epoch_12_result.bbox.json"  # prediction 결과로 mmdetection에서 생성된 json 파일 경로
-output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/Hyundai_Data/Dataset_800_300_1.0_wo_Text/gfl/epoch_12_adaptive/"  # 출력 파일들이 저장될 폴더
+gt_json_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Drawing_Segment/Dataset_800_300_0.5_wo_Text/test.json"  # 학습 도면 분할시 생성한 test.json 파일 경로
+dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/Hyundai_Data/Dataset_800_300_0.5_wo_Text/gfl/epoch_12/epoch_12_result.bbox.json"  # prediction 결과로 mmdetection에서 생성된 json 파일 경로
+output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/Hyundai_Data/Dataset_800_300_0.5_wo_Text/gfl/epoch_12_adaptive/"  # 출력 파일들이 저장될 폴더
 
 drawing_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Drawing"  # 원본 도면 이미지 폴더
 symbol_xml_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/SymbolXML"  # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
 text_xml_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/TextXML"  # 원본 도면 이미지와 함께 제공된 Text XML 폴더
 symbol_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Hyundai_SymbolClass_Sym_Only.txt"  # (방향 제거된) symbol index txt 파일 경로
+symbol_type_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Hyundai_SymbolClass_Type.txt"  # 심볼이름-타입 매칭 txt
 
 include_text_as_class = False
 include_text_orientation_as_class = False
 stride_w = 300  # 학습 도면 분할시에 사용한 stride
 stride_h = 300
-drawing_resize_scale = 1.0  # 학습 도면 분할시에 사용한 scaling factor (절반 크기로 줄였으면 0.5)
+drawing_resize_scale = 0.5 # 학습 도면 분할시에 사용한 scaling factor (절반 크기로 줄였으면 0.5)
+
 score_threshold = 0.5  # score filtering threshold
-nms_threshold = 0.1
+nms_threshold = 0.0
 matching_iou_threshold = 0.5  # 매칭(정답) 처리할 IOU threshold
 adaptive_thr_dict = {
     311: 0.02, 66: 0.06, 145: 0.4,
@@ -40,6 +43,7 @@ gt_dt_result = gt_dt_data(gt_json_filepath, dt_json_filepath, drawing_dir, symbo
                           drawing_resize_scale, stride_w, stride_h,
                           score_threshold, nms_threshold, adaptive_thr_dict=adaptive_thr_dict)
 symbol_dict = gt_dt_result.symbol_dict  # or read_symbol_txt(symbol_filepath)
+symbol_type_dict = read_symbol_type_txt(symbol_type_filepath)
 
 # 2) evaluate 클래스 초기화 및 매칭 정보 생성
 #   : NMS 완료된 dt result와 gt result간의 매칭 dictionary 생성
@@ -63,7 +67,7 @@ if include_text_as_class == True:
 
 # --- PNID XML 형식으로 파일 출력
 #   : (주로) dt_result_after_nms를 출력하며, 필요에 따라 다른 단계의 데이터도 PNID XML형식으로 출력 가능
-write_symbol_result_to_xml(output_dir, gt_dt_result.dt_result_after_nms, symbol_dict)
+write_symbol_result_to_xml(output_dir, gt_dt_result.dt_result_after_nms, symbol_dict, symbol_type_dict)
 if include_text_as_class == True:
     write_text_result_to_xml(output_dir, gt_dt_result.dt_result_text_recognition, symbol_dict)
 

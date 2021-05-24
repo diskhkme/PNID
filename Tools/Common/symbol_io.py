@@ -1,4 +1,15 @@
 
+def read_symbol_type_txt(filename):
+    class_index = 0
+    class_name_to_type_dict = {}
+
+    with open(filename, 'r') as f:
+        for l in f.readlines():
+            strs = l.rstrip().split("|")
+            class_name_to_type_dict[strs[1]] = strs[0]
+
+    return class_name_to_type_dict
+
 def read_symbol_txt(filename, include_text_as_class, include_text_orientation_as_class):
     class_index = 0
     class_name_to_index_dict = {}
@@ -64,3 +75,15 @@ def symbol_simple_dump_to_txt(filename, symbol_dict):
         f.write(f"{id}|{key}\n")
         id += 1
     f.close()
+
+
+if __name__ == '__main__':
+    symbol_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Hyundai_SymbolClass_Sym_Only.txt"  # (방향 제거된) symbol index txt 파일 경로
+    symbol_type_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Hyundai_SymbolClass_Type.txt"  # 심볼이름-타입 매칭 txt
+
+    symbol_dict = read_symbol_txt(symbol_filepath, False, False)
+    symbol_type_dict = read_symbol_type_txt(symbol_type_filepath)
+
+    for k,v in symbol_dict.items():
+        if k not in symbol_type_dict:
+            print(k)

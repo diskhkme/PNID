@@ -7,8 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from xml.etree.ElementTree import Element, ElementTree, dump
 
-# TODO : 텍스트 인식까지 통합 구현하고 나면, 텍스트 인식정보 포함 출력 기능 추가
-def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict):
+def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict):
     for filename, objects in dt_result.items():
         root = Element("annotation")
         filename_node = Element("filename")
@@ -16,15 +15,19 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict):
         root.append(filename_node)
         for object in objects:
 
-            # text가 key에 있는경우, # 텍스트는 별도 XML로 출력
+            # text가 key에 있는경우 제외 (텍스트는 별도 XML로 출력함)
             if "text" in symbol_dict:
                 if object["category_id"] == symbol_dict["text"] or object["category_id"] == symbol_dict["text_rotated"] or object["category_id"] == symbol_dict["text_rotated_45"]:
                     continue
 
-            object_node = Element("object")
+            object_node = Element("symbol_object")
 
-            name_node = Element("name")
-            name_node.text = [sym_name for sym_name, id in symbol_dict.items() if id == object["category_id"]][0]
+            name_node = Element("class")
+            symbol_name = [sym_name for sym_name, id in symbol_dict.items() if id == object["category_id"]][0]
+            name_node.text = symbol_name
+
+            type_node = Element("type")
+            type_node.text = [typename_name for sym_name, typename_name in symbol_type_dict.items() if sym_name == symbol_name][0]
 
             bndbox_node = Element("bndbox")
 
@@ -42,8 +45,22 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict):
             bndbox_node.append(xmax_node)
             bndbox_node.append(ymax_node)
 
+            degree_node = Element("degree")
+            degree_node.text = str(0)
+
+            flip_node = Element("flip")
+            flip_node.text = "n"
+
+            etc_node = Element("etc")
+            etc_node.text = ""
+
+            object_node.append(type_node)
             object_node.append(name_node)
             object_node.append(bndbox_node)
+            object_node.append(degree_node)
+            object_node.append(flip_node)
+            object_node.append(etc_node)
+
             root.append(object_node)
 
         indent(root)

@@ -8,7 +8,7 @@ from Visualize.image_drawing import draw_bbox_from_bbox_list
 xml_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/TextXML"
 drawing_img_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Drawing"
 output_img_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/TextXML_Visualized"
-is_text_xml = True
+is_text_xml = False
 
 xml_filenames = os.listdir(xml_dir)
 
