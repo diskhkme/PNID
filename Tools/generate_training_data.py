@@ -11,7 +11,7 @@ from Data_Generator.write_coco_annotation import write_coco_annotation
 
 base_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/"
 drawing_dir = base_dir + "Drawing"
-drawing_segment_dir = base_dir + "Drawing_Segment/Dataset_800_300_0.5_w_Text_Rotated"
+drawing_segment_dir = base_dir + "Drawing_Segment/Dataset_800_300_1.0_wo_Text"
 symbol_xml_dir = base_dir + "SymbolXML"
 text_xml_dir = base_dir + "TextXML"
 
@@ -38,10 +38,9 @@ include_text_orientation_as_class = True # 세로 문자열을 또다른 별도�
 # TODO: 현대ENG 데이터에는 45도 회전 데이터도 있어서 {"text_rotated_45"} 심볼도 추가. 인식 이후 과정에서 문제가 없는지 테스트 필요함
 
 segment_params = [800, 800, 300, 300] # width_size, height_size, width_stride, height_stride
-drawing_resize_scale = 0.5
+drawing_resize_scale = 1.0
 
 symbol_dict = read_symbol_txt(symbol_txt_path, include_text_as_class, include_text_orientation_as_class)
-
 
 train_xmls = [os.path.join(symbol_xml_dir, f"{x}.xml") for x in train_drawings]
 val_xmls = [os.path.join(symbol_xml_dir, f"{x}.xml") for x in val_drawings]
