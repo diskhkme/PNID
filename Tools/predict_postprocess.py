@@ -4,6 +4,7 @@ from Predict_Postprocess.evaluate import evaluate
 from Common.pnid_xml import write_symbol_result_to_xml, write_text_result_to_xml
 from Predict_Postprocess.text_recognition.recognize_text import get_text_detection_result, recognize_text_using_tess
 from Common.symbol_io import read_symbol_type_txt
+from pathlib import Path
 
 # Test 결과의 성능 계산 및 이미지 출력 코드
 
@@ -35,6 +36,9 @@ adaptive_thr_dict = {
 
 # vertical_threshold = 2 # 세로 문자열로 판단하는 기준. 세로가 가로보다 vertical_threshold 배 이상 길면 세로로 판단
 text_img_margin_ratio = 0.1  # detection된 문자열에서 크기를 약간 키워서 text recognition을 수행할 경우. (ex, 0.1이면 box를 1.1배 키워서 인식)
+
+# 0) 출력 파일이 저장될 디렉터리가 없다면 자동으로 생성
+Path(output_dir).mkdir(parents=True, exist_ok=True)
 
 # 1) gt_dt_data 클래스 초기화를 통한 데이터 전처리
 #   : 분할 Ground Truth(gt) 및 detection(dt) result를 기반으로 분할 전 도면 좌표로 다시 맵핑하고, score filtering, NMS를 수행
