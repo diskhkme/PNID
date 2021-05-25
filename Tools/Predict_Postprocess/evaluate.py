@@ -214,8 +214,9 @@ class evaluate():
         cocoEval = cocoeval.COCOeval(cocoGT,cocoDt,annType)
 
         # ignore class 제거
-        for ignore_class in ignore_class_list:
-            cocoEval.params.catIds.remove(ignore_class)
+        if ignore_class_list is not None:
+            for ignore_class in ignore_class_list:
+                cocoEval.params.catIds.remove(ignore_class)
 
         cocoEval.evaluate()
         cocoEval.accumulate()
