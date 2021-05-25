@@ -97,31 +97,68 @@ class evaluate():
 
         return gt_to_dt_match_dict, dt_to_gt_match_dict
 
-    def dump_pr_and_ap_result(self, pr_result, ap_result_str, symbol_dict):
+    def dump_pr_and_ap_result(self, pr_result, ap_result_str, symbol_dict, ap_result_only_sym_str=None):
         """ AP와 PR 계산 결과를 파일로 출력. test 내에 존재하는 모든 도면에 대해 한 파일로 한꺼번에 출력함
 
         Arguments:
             pr_result (dict): 도면 이름을 key로, 각 도면에서의 PR 계산에 필요한 정보들(detected_num, gt_num 및 클래스별 gt/dt num)을 저장한 dict
             ap_result_str (string): cocoeval의 evaluate summary를 저장한 문자열
             symbol_dict (dict): 심볼 이름을 key로, id를 value로 갖는 dict
+            ap_result_only_sym_str (string)_: text class를 제외하고 계산된 cocoeval의 evaluate summary를 저장한 문자열, None인 경우는 text class가 추가되지 않았다고 생각함
         Returns:
             None
         """
+        is_text_class_added = ap_result_only_sym_str is not None
         outpath = os.path.join(self.output_dir, "test_result.txt")
         with open(outpath, 'w') as f:
             mean_precision = 0
             mean_recall = 0
 
+            if is_text_class_added:
+                mean_precision_only_sym = 0
+                mean_recall_only_sym = 0
+
             for filename, values in pr_result.items():
                 f.write(f"test drawing : {filename}----------------------------------\n")
-                f.write(f"precision : {values['detected_num']} / {values['all_prediction_num']} = {values['precision']}\n")
-                f.write(f"recall : {values['detected_num']} / {values['all_gt_num']} = {values['recall']}\n")
-                mean_precision += values['precision']
-                mean_recall += values['recall']
+                f.write(
+                    f"total precision : {values['detected_num']} / {values['all_prediction_num']} = {values['precision']}\n")
+                f.write(f"total recall : {values['detected_num']} / {values['all_gt_num']} = {values['recall']}\n")
 
-                for gt_class, gt_num, detected_num in zip(values["gt_classes"], values["per_class_gt_num"],values["per_class_detected_num"]):
+                if is_text_class_added:
+                    only_sym_detected_num = values['detected_num']
+                    only_sym_all_prediction_num = values['all_prediction_num']
+                    only_sym_all_gt_num = values['all_gt_num']
+
+                    only_text_detected_num = 0
+                    only_text_prediction_num = 0
+                    only_text_gt_num = 0
+                    for gt_class, gt_num, detected_num, detection_num in zip(values["gt_classes"],
+                                                                             values["per_class_gt_num"],
+                                                                             values["per_class_detected_num"],
+                                                                             values['per_class_detection_num']):
+                        if gt_class in (386, 387):
+                            only_sym_detected_num -= detected_num
+                            only_sym_all_prediction_num -= detection_num
+                            only_sym_all_gt_num -= gt_num
+
+                            only_text_gt_num += gt_num
+                            only_text_detected_num += detected_num
+                            only_text_prediction_num += detection_num
+
+                    f.write(
+                        f"\nonly symbol precision : {only_sym_detected_num} / {only_sym_all_prediction_num} = {only_sym_detected_num / only_sym_all_prediction_num}\n")
+                    f.write(
+                        f"only symbol recall : {only_sym_detected_num} / {only_sym_all_gt_num} = {only_sym_detected_num / only_sym_all_gt_num}\n")
+
+                    mean_precision += values['precision']
+                    mean_recall += values['recall']
+                    mean_precision_only_sym += only_sym_detected_num / only_sym_all_prediction_num
+                    mean_recall_only_sym += only_sym_detected_num / only_sym_all_gt_num
+
+                for gt_class, gt_num, detected_num in zip(values["gt_classes"], values["per_class_gt_num"],
+                                                          values["per_class_detected_num"]):
                     if symbol_dict is not None:
-                        sym_name = [k for k,v in symbol_dict.items() if v == gt_class]
+                        sym_name = [k for k, v in symbol_dict.items() if v == gt_class]
                     else:
                         sym_name = ""
                     f.write(f"class {gt_class} ({sym_name}) : {detected_num} / {gt_num}\n")
@@ -129,17 +166,31 @@ class evaluate():
                 f.write("\n")
             f.write(ap_result_str)
 
+            if is_text_class_added:
+                mean_precision_only_sym /= len(pr_result.keys())
+                mean_recall_only_sym /= len(pr_result.keys())
+
+                ap_strs = ap_result_only_sym_str.splitlines()[0].split(" ")
+                ap = float(ap_strs[len(ap_strs) - 1])
+                ap_50_strs = ap_result_only_sym_str.splitlines()[1].split(" ")
+                ap_50 = float(ap_50_strs[len(ap_50_strs) - 1])
+                ap_75_strs = ap_result_only_sym_str.splitlines()[2].split(" ")
+                ap_75 = float(ap_75_strs[len(ap_75_strs) - 1])
+                f.write(
+                    f"(mean precision only sym, mean recall only sym, ap, ap50, ap75) = ({mean_precision_only_sym}, {mean_recall_only_sym}, {ap}, {ap_50}, {ap_75})\n")
+
             mean_precision /= len(pr_result.keys())
             mean_recall /= len(pr_result.keys())
 
             ap_strs = ap_result_str.splitlines()[0].split(" ")
-            ap = float(ap_strs[len(ap_strs)-1])
+            ap = float(ap_strs[len(ap_strs) - 1])
             ap_50_strs = ap_result_str.splitlines()[1].split(" ")
             ap_50 = float(ap_50_strs[len(ap_50_strs) - 1])
             ap_75_strs = ap_result_str.splitlines()[2].split(" ")
             ap_75 = float(ap_75_strs[len(ap_75_strs) - 1])
 
-            f.write(f"(mean precision, mean recall, ap, ap50, ap75) = ({mean_precision}, {mean_recall}, {ap}, {ap_50}, {ap_75})")
+            f.write(
+                f"(mean precision, mean recall, ap, ap50, ap75) = ({mean_precision}, {mean_recall}, {ap}, {ap_50}, {ap_75})")
 
     def calculate_ap(self, gt_result_json, dt_result):
         """ COCOeval을 사용한 AP계산. 중간 과정으로 gt와 dt에 대한 json파일이 out_dir에 생성됨
