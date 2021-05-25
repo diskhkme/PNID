@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from xml.etree.ElementTree import Element, ElementTree, dump
 
-def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict):
+def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict=None):
     for filename, objects in dt_result.items():
         root = Element("annotation")
         filename_node = Element("filename")
@@ -26,8 +26,9 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
             symbol_name = [sym_name for sym_name, id in symbol_dict.items() if id == object["category_id"]][0]
             name_node.text = symbol_name
 
-            type_node = Element("type")
-            type_node.text = [typename_name for sym_name, typename_name in symbol_type_dict.items() if sym_name == symbol_name][0]
+            if symbol_type_dict is not None:
+                type_node = Element("type")
+                type_node.text = [typename_name for sym_name, typename_name in symbol_type_dict.items() if sym_name == symbol_name][0]
 
             bndbox_node = Element("bndbox")
 
