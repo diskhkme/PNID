@@ -16,9 +16,13 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
         for object in objects:
 
             # text가 key에 있는경우 제외 (텍스트는 별도 XML로 출력함)
-            if "text" in symbol_dict:
-                if object["category_id"] == symbol_dict["text"] or object["category_id"] == symbol_dict["text_rotated"] or object["category_id"] == symbol_dict["text_rotated_45"]:
-                    continue
+            category_id = object["category_id"]
+            if "text" in symbol_dict.keys() and category_id == symbol_dict["text"]:
+                continue
+            if "text_rotated" in symbol_dict.keys() and category_id == symbol_dict["text_rotated"]:
+                continue
+            if "text_rotated_45" in symbol_dict.keys() and category_id == symbol_dict["text_rotated_45"]:
+                continue
 
             object_node = Element("symbol_object")
 
