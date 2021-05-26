@@ -59,7 +59,8 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
             etc_node = Element("etc")
             etc_node.text = ""
 
-            object_node.append(type_node)
+            if symbol_type_dict is not None:
+                object_node.append(type_node)
             object_node.append(name_node)
             object_node.append(bndbox_node)
             object_node.append(degree_node)
@@ -86,9 +87,10 @@ def write_text_result_to_xml(out_dir, dt_result_text, symbol_dict):
             string_node.text = object["string"]
 
             orientation_node = Element("orientation")
-            if object["category_id"] == symbol_dict["text_rotated"]:
+            category_id = object["category_id"]
+            if 'text_rotated' in symbol_dict.keys() and category_id == symbol_dict["text_rotated"]:
                 orientation_node.text = str(90)
-            elif object["category_id"] == symbol_dict["text_rotated_45"]:
+            elif 'text_rotated_45' in symbol_dict.keys() and category_id == symbol_dict["text_rotated_45"]:
                 orientation_node.text = str(45)
             else:
                 orientation_node.text = str(0)
