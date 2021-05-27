@@ -108,13 +108,20 @@ class evaluate():
         Returns:
             None
         """
-        is_text_class_added = ap_result_only_sym_str is not None
+        write_only_sym_reslt = ap_result_only_sym_str is not None
         outpath = os.path.join(self.output_dir, "test_result.txt")
         with open(outpath, 'w') as f:
             mean_precision = 0
             mean_recall = 0
 
-            if is_text_class_added:
+            if write_only_sym_reslt:
+                text_classes_list = []
+                if "text" in symbol_dict.keys():
+                    text_classes_list.append(symbol_dict["text"])
+                if "text_rotated" in symbol_dict.keys():
+                    text_classes_list.append(symbol_dict["text_rotated"])
+                if "text_rotated_45" in symbol_dict.keys():
+                    text_classes_list.append(symbol_dict["text_rotated_45"])
                 mean_precision_only_sym = 0
                 mean_recall_only_sym = 0
 
@@ -122,8 +129,10 @@ class evaluate():
                 f.write(f"test drawing : {filename}----------------------------------\n")
                 f.write(f"total precision : {values['detected_num']} / {values['all_prediction_num']} = {values['precision']}\n")
                 f.write(f"total recall : {values['detected_num']} / {values['all_gt_num']} = {values['recall']}\n")
+                mean_precision += values['precision']
+                mean_recall += values['recall']
 
-                if is_text_class_added:
+                if write_only_sym_reslt:
                     only_sym_detected_num = values['detected_num']
                     only_sym_all_prediction_num = values['all_prediction_num']
                     only_sym_all_gt_num = values['all_gt_num']
@@ -132,7 +141,7 @@ class evaluate():
                     only_text_prediction_num = 0
                     only_text_gt_num = 0
                     for gt_class, gt_num, detected_num, detection_num in zip(values["gt_classes"], values["per_class_gt_num"],values["per_class_detected_num"], values['per_class_detection_num']):
-                        if gt_class in (386, 387):
+                        if gt_class in text_classes_list:
                             only_sym_detected_num -= detected_num
                             only_sym_all_prediction_num -= detection_num
                             only_sym_all_gt_num -= gt_num
@@ -144,11 +153,9 @@ class evaluate():
                     f.write(f"\nonly symbol precision : {only_sym_detected_num} / {only_sym_all_prediction_num} = {only_sym_detected_num/only_sym_all_prediction_num}\n")
                     f.write(f"only symbol recall : {only_sym_detected_num} / {only_sym_all_gt_num} = {only_sym_detected_num/only_sym_all_gt_num}\n")
 
-                    mean_precision += values['precision']
-                    mean_recall += values['recall']
                     mean_precision_only_sym += only_sym_detected_num/only_sym_all_prediction_num
                     mean_recall_only_sym += only_sym_detected_num/only_sym_all_gt_num
-
+                    
                 for gt_class, gt_num, detected_num in zip(values["gt_classes"], values["per_class_gt_num"],values["per_class_detected_num"]):
                     if symbol_dict is not None:
                         sym_name = [k for k,v in symbol_dict.items() if v == gt_class]
@@ -159,7 +166,7 @@ class evaluate():
                 f.write("\n")
             f.write(ap_result_str)
 
-            if is_text_class_added:
+            if write_only_sym_reslt:
                 mean_precision_only_sym /= len(pr_result.keys())
                 mean_recall_only_sym /= len(pr_result.keys())
 
