@@ -9,21 +9,21 @@ import shutil
 
 # Test 결과의 성능 계산 및 이미지 출력 코드
 
-gt_json_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Drawing_Segment/Dataset_800_300_0.5_wo_Text/test.json"  # 학습 도면 분할시 생성한 test.json 파일 경로
-dt_json_filepath = "D:/Libs/Pytorch/SwinTransformer/workdir/Hyundai_Data/Dataset_800_300_0.5_wo_Text/gfl/epoch_12/epoch_12_result.bbox.json"  # prediction 결과로 mmdetection에서 생성된 json 파일 경로
-output_dir = "D:/Libs/Pytorch/SwinTransformer/workdir/Hyundai_Data/Dataset_800_300_0.5_wo_Text/gfl/epoch_12_adaptive/"  # 출력 파일들이 저장될 폴더
+gt_json_filepath = "D:/Hyondai_Data/210520_Data/Drawing_Segment/Dataset_800_300_1.0_wo_Text(0520)/test.json"  # 학습 도면 분할시 생성한 test.json 파일 경로
+dt_json_filepath = "D:/Hyondai_Data/210520_Data/Drawing_Segment/Dataset_800_300_1.0_wo_Text(0520) result/hyondai_small_1.0_wo_text.bbox.json"  # prediction 결과로 mmdetection에서 생성된 json 파일 경로
+output_dir = "D:/Hyondai_Data/210520_Data/Drawing_Segment/tttt/"  # 출력 파일들이 저장될 폴더
 
-drawing_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Drawing"  # 원본 도면 이미지 폴더
-symbol_xml_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/SymbolXML"  # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
-text_xml_dir = "D:/Test_Models/PNID/HyundaiEng/210520_Data/TextXML"  # 원본 도면 이미지와 함께 제공된 Text XML 폴더
-symbol_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Hyundai_SymbolClass_Sym_Only.txt"  # (방향 제거된) symbol index txt 파일 경로
-symbol_type_filepath = "D:/Test_Models/PNID/HyundaiEng/210520_Data/Hyundai_SymbolClass_Type.txt"  # 심볼이름-타입 매칭 txt
+drawing_dir = "D:/Hyondai_Data/210520_Data/Drawing/JPG"  # 원본 도면 이미지 폴더
+symbol_xml_dir = "D:/Hyondai_Data/210520_Data/SymbolXML"  # 원본 도면 이미지와 함께 제공된 Symbol XML 폴더
+text_xml_dir = "D:/Hyondai_Data/210520_Data/TextXML"  # 원본 도면 이미지와 함께 제공된 Text XML 폴더
+symbol_filepath = "D:/Hyondai_Data/210520_Data/Hyundai_SymbolClass_Sym_Only.txt"  # (방향 제거된) symbol index txt 파일 경로
+symbol_type_filepath = "D:/Hyondai_Data/210520_Data/Hyundai_SymbolClass_Type.txt"  # 심볼이름-타입 매칭 txt
 
 include_text_as_class = False
 include_text_orientation_as_class = False
 stride_w = 300  # 학습 도면 분할시에 사용한 stride
 stride_h = 300
-drawing_resize_scale = 0.5 # 학습 도면 분할시에 사용한 scaling factor (절반 크기로 줄였으면 0.5)
+drawing_resize_scale = 1.0 # 학습 도면 분할시에 사용한 scaling factor (절반 크기로 줄였으면 0.5)
 
 score_threshold = 0.5  # score filtering threshold
 nms_threshold = 0.0
@@ -48,8 +48,16 @@ gt_dt_result = gt_dt_data(gt_json_filepath, dt_json_filepath, drawing_dir, symbo
                           include_text_as_class, include_text_orientation_as_class, text_xml_dir,
                           drawing_resize_scale, stride_w, stride_h,
                           score_threshold, nms_threshold, adaptive_thr_dict=adaptive_thr_dict)
+
+#  small symbol result json 에 big symbol model result 추가
+gt_dt_result.merge_big_sym_result('D:/Hyondai_Data/210520_Data/Drawing_Segment/hyoundai_big_symbol_0.125(0520)/test.json',
+                                  'D:/Hyondai_Data/210520_Data/Drawing_Segment/Dataset_800_300_1.0_wo_Text(0520) result/hyondai_bigsym_e100.bbox.json',
+                                  0.125)
+
+
 symbol_dict = gt_dt_result.symbol_dict  # or read_symbol_txt(symbol_filepath)
 symbol_type_dict = read_symbol_type_txt(symbol_type_filepath)
+
 
 # 2) evaluate 클래스 초기화 및 매칭 정보 생성
 #   : NMS 완료된 dt result와 gt result간의 매칭 dictionary 생성
