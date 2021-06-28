@@ -1,3 +1,4 @@
+import json
 import os, sys
 import io
 import numpy as np
@@ -6,6 +7,7 @@ from copy import deepcopy
 from Common.coco_json import coco_dt_json_reader, coco_json_write
 from Common.pnid_xml import symbol_xml_reader, text_xml_reader
 from Common.symbol_io import read_symbol_txt
+
 
 class gt_dt_data():
     """ Evaluate 및 성능 계산을 위한 모든 데이터를 저장하는 클래스
@@ -27,6 +29,7 @@ class gt_dt_data():
         self.drawing_dir = drawing_dir
         self.symbol_xml_dir = symbol_xml_dir
         self.drawing_resize_scale = drawing_resize_scale
+        self.score_threshold = score_threshold
 
         self.include_text_as_class = include_text_as_class
         self.include_text_orientation_as_class = include_text_orientation_as_class
@@ -46,6 +49,30 @@ class gt_dt_data():
         # 3) gt_result: ground truth xml 데이터. (gt_result_json은 동일한 데이터를 coco json 형태로 변환한 것)
         self.gt_result_json, self.gt_result = self.parse_test_gt_xmls()
         # 4) dt_result_after_nms: score 기반으로 필터링 후 NMS를 수행한 데이터
+        self.dt_result_after_nms = self.get_dt_result_nms(self.nms_iou_threshold)
+
+    def merge_big_sym_result(self, big_gt_json_filepath, big_dt_json_filepath, drawing_resize_scale, big_sym_only=False):
+        with open(big_gt_json_filepath, 'r') as f:
+            big_gt_json = json.load(f)
+        with open(big_dt_json_filepath, 'r') as f:
+            big_dt_json = json.load(f)
+
+        id_to_plane_name_dict = dict()
+        for image_info in big_gt_json['images']:
+            id_to_plane_name_dict[image_info['id']] = image_info['file_name'].split('.')[0]
+
+        for dt in big_dt_json:
+            image_id = dt['image_id']
+            image_name = id_to_plane_name_dict[image_id]
+            bbox = dt['bbox']
+            bbox_resized = [int(i / drawing_resize_scale) for i in bbox]
+
+            self.dt_result_raw[image_name].append(
+                {
+                    'bbox': bbox_resized, 'score': dt['score'], 'category_id': dt['category_id']
+                }
+            )
+        self.dt_result = self.score_filter(self.score_threshold)
         self.dt_result_after_nms = self.get_dt_result_nms(self.nms_iou_threshold)
 
     def score_filter(self, score_threshold):

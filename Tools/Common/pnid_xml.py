@@ -7,12 +7,34 @@ import numpy as np
 import matplotlib.pyplot as plt
 from xml.etree.ElementTree import Element, ElementTree, dump
 
-def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict=None):
+
+def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict=None, img_shape_tuple=(9933, 7016, 3)):
     for filename, objects in dt_result.items():
         root = Element("annotation")
-        filename_node = Element("filename")
+
+        # add basic_drawing_information_node start
+        width, height, depth = img_shape_tuple
+        basic_drawing_information_node = Element('basic_drawing_information')
+
+        filename_node = ET.SubElement(basic_drawing_information_node, "filename")
         filename_node.text = f"{filename}.jpg"
-        root.append(filename_node)
+
+        path_node = ET.SubElement(basic_drawing_information_node, "path")
+        path_node.text = ""
+
+        size_node = ET.SubElement(basic_drawing_information_node, "size")
+        width_node = ET.SubElement(size_node, "width")
+        height_node = ET.SubElement(size_node, "width")
+        depth_node = ET.SubElement(size_node, "width")
+
+        width_node.text = str(width)
+        height_node.text = str(height)
+        depth_node.text = str(depth)
+
+        root.append(basic_drawing_information_node)
+        # add basic_drawing_information_node end
+
+
         for object in objects:
 
             # text가 key에 있는경우 제외 (텍스트는 별도 XML로 출력함)
@@ -72,6 +94,7 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
         indent(root)
         out_path = os.path.join(out_dir, f"{filename}.xml")
         ElementTree(root).write(out_path)
+
 
 def write_text_result_to_xml(out_dir, dt_result_text, symbol_dict):
     for filename, objects in dt_result_text.items():
@@ -155,6 +178,7 @@ class xml_reader():
         indent(self.tree.getroot())
         self.tree.write(out_filename)
 
+
 class symbol_xml_reader(xml_reader):
     """
     심볼 xml 파일 파싱 클래스
@@ -210,6 +234,7 @@ class symbol_xml_reader(xml_reader):
         obj_to_remove = set(obj_to_remove)
         for obj in obj_to_remove:
             self.root.remove(obj)
+
 
 class text_xml_reader(xml_reader):
     """
@@ -364,6 +389,7 @@ class text_xml_reader(xml_reader):
                         object.find("bndbox").find("ymin").text = str(ymin + first - margin)
                         object.find("bndbox").find("ymax").text = str(ymin + last + margin)
 
+
 def indent(elem, level=0):  # 자료 출처 https://goo.gl/J8VoDK
     """ XML의 들여쓰기 포함한 출력을 위한 함수
 
@@ -381,6 +407,7 @@ def indent(elem, level=0):  # 자료 출처 https://goo.gl/J8VoDK
     else:
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
+
 
 if __name__ == '__main__':
     # filepath = "D:/Test_Models/PNID/EWP_Data/SymbolXML/KNU-A-22300-001-01.xml"
