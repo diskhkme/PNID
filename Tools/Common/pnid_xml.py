@@ -163,11 +163,12 @@ class xml_reader():
         self.filepath = filepath
         self.tree = parse(filepath)
         self.root = self.tree.getroot()
+        self.info = self.root.find("basic_drawing_information")
 
-        self.filename = self.root.findtext("filename")
-        self.width = int(self.root.find("size").findtext("width"))
-        self.height = int(self.root.find("size").findtext("height"))
-        self.depth = int(self.root.find("size").findtext("depth"))
+        self.filename = self.info.findtext("filename")
+        self.width = int(self.info.find("size").findtext("width"))
+        self.height = int(self.info.find("size").findtext("height"))
+        self.depth = int(self.info.find("size").findtext("depth"))
 
         self.object_list = []
 
@@ -243,13 +244,13 @@ class text_xml_reader(xml_reader):
     def __init__(self,filepath):
         super().__init__(filepath)
 
-        for object in self.root.iter("object"):
+        for object in self.root.iter("symbol_object"):
             xmin = int(object.find("bndbox").findtext("xmin"))
             xmax = int(object.find("bndbox").findtext("xmax"))
             ymin = int(object.find("bndbox").findtext("ymin"))
             ymax = int(object.find("bndbox").findtext("ymax"))
-            string = object.findtext("string")
-            orientation = int(math.ceil(float(object.findtext("orientation")))) # 89.9991이 있음 (예외)
+            string = object.findtext("class")
+            orientation = int(math.ceil(float(object.findtext("degree")))) # 89.9991이 있음 (예외)
             self.object_list.append([string, xmin, ymin, xmax, ymax, orientation])
 
     def error_correction(self, img_dir, remove_spacing=True, newline_separation=True,
