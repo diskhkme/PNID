@@ -670,32 +670,36 @@ def eval_single_result(gt_file, det_file):
 def parse_xml_to_txt(xml_file, type):
     name = xml_file.split('.xml')[0]
 
-    fp = open(name + '.txt', 'w', encoding='utf-8')
+    fp = open(name + '.txt', 'w', encoding='UTF8')
     tree = parse(xml_file)
     annotation = tree.getroot()
-    objects = annotation.findall('object')
+    objects = annotation.findall('symbol_object')
 
     if type == 'gt':
         for ob in objects:
-            string = ob[1].text
-            # orientation = ob[2].text
-            bndbox = ob[3]
-            L = bndbox[0].text
-            T = bndbox[1].text
-            R = bndbox[2].text
-            B = bndbox[3].text
+            type = ob[1].text
+            if type == 'text':
+                string = ob.findtext("class")
+                # orientation = ob[2].text
+                bndbox = ob[3]
+                L = bndbox[0].text
+                T = bndbox[1].text
+                R = bndbox[2].text
+                B = bndbox[3].text
 
-            data = L + ',' + T + ',' + R + ',' + B + ',' + string + '\n'
+                string = string.replace('\n', " ")
 
-            fp.write(data)
+                data = L + ',' + T + ',' + R + ',' + B + ',' + string + '\n'
+
+                fp.write(data)
         fp.close()
 
         return fp
 
     elif type == 'res':
         for ob in objects:
-            string = ob[0].text
-            orientation = ob[1].text
+            string = ob[1].text
+            # orientation = ob[3].text
             bndbox = ob[2]
             L = bndbox[0].text
             T = bndbox[1].text
