@@ -1,10 +1,20 @@
 import cv2
 import os
 import numpy as np
-from Common.pnid_xml import symbol_xml_reader, text_xml_reader
+from tqdm import tqdm
+from src.Common.pnid_xml import symbol_xml_reader, text_xml_reader
 
-def generate_segmented_data(xml_list, drawing_dir, drawing_segment_dir, segment_params, text_xml_dir, symbol_dict, include_text_as_class, include_text_orientation_as_class,
-                            drawing_resize_scale, prefix):
+def generate_segmented_data(phase,
+                            xml_list,
+                            symbol_dict,
+                            drawing_dir,
+                            drawing_segment_dir,
+                            segment_params,
+                            drawing_resize_scale,
+                            include_text_as_class=False,
+                            include_text_orientation_as_class=False,
+                            text_xml_dir=None,
+                            ):
     """ 폴더 내 원본 이미지 도면들을 분할하고 분할 정보를 리스트로 저장
 
     Arguments:
@@ -16,15 +26,14 @@ def generate_segmented_data(xml_list, drawing_dir, drawing_segment_dir, segment_
         symbol_dict (dict): symbol 이름을 key로, id를 value로 갖는 dict
         include_text_as_class (bool): text 데이터를 class로 추가할 것인지
         drawing_resize_scale (float): 전체 도면 조정 스케일
-        prefix (string): train/val/test 중 하나. 이미지 저장 폴더명 생성에 필요
+        phase (string): train/val/test 중 하나. 이미지 저장 폴더명 생성에 필요
 
     Return:
         xml에 있는 전체 도면에서 분할된 도면의 전체 정보 [sub_img_name, symbol_name, xmin, ymin, xmax, ymax]
     """
     entire_segmented_info = []
 
-    for xmlPath in xml_list:
-        print(f"Proceccing {xmlPath}...")
+    for xmlPath in tqdm(xml_list):
         fname, ext = os.path.splitext(xmlPath)
         if ext.lower() != ".xml":
             continue
@@ -32,8 +41,10 @@ def generate_segmented_data(xml_list, drawing_dir, drawing_segment_dir, segment_
         xmlReader = symbol_xml_reader(xmlPath)
         img_filename, width, height, depth, object_list = xmlReader.getInfo()
 
-        for i in range(len(object_list)):
-            object_list[i][0] = symbol_dict[object_list[i][0].split("-")[0]]
+        # EWP 데이터 예전 버전 처리를 위해 추가됨
+        object_list = [[symbol_dict[x[0].split('-')[0]], x[1], x[2], x[3], x[4]] for x in object_list]
+        # for i in range(len(object_list)):
+        #     object_list[i][0] = symbol_dict[object_list[i][0].split("-")[0]]
 
 
         img_file_path = os.path.join(drawing_dir, img_filename)
@@ -42,10 +53,10 @@ def generate_segmented_data(xml_list, drawing_dir, drawing_segment_dir, segment_
             text_xml_reader_obj = text_xml_reader(os.path.join(text_xml_dir, os.path.basename(xmlPath)))
             _, _, _, _, txt_object_list = text_xml_reader_obj.getInfo()
             segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, txt_object_list, include_text_orientation_as_class,
-                                                    symbol_dict, segment_params, drawing_resize_scale, prefix)
+                                                    symbol_dict, segment_params, drawing_resize_scale, phase)
         else:
             segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, None, None,
-                                                    symbol_dict, segment_params, drawing_resize_scale, prefix)
+                                                    symbol_dict, segment_params, drawing_resize_scale, phase)
 
         entire_segmented_info.extend(segmented_objects_info)
 

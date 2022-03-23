@@ -47,7 +47,7 @@ print(f"Number of unique symbol labels in entire dataset: {len(unique_labels)}")
 entire_bboxes_array = np.array([[x[1], x[2], x[3], x[4]] for x in entire_objects])
 sorted_by_size = sorted(mean_diagonal_lengths.items(), key=lambda item: item[1])
 
-f = open("symbol_statistics.csv",'w')
+f = open("../symbol_statistics.csv", 'w') # TODO: 왜 파일 이름이 들어가 있는지 확인?
 for size in sorted_by_size:
     data = str(size[0]) + "," + str(size[1]) + "," + str(occurences[size[0]]) + "\n"
     f.write(data)

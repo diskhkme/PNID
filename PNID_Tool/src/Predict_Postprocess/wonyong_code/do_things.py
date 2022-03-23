@@ -208,6 +208,6 @@ def visualization(mode, output_dir_name, whole_gt_json_path, whole_result_json_p
 
 if __name__ == '__main__':
     visualization(mode=1, output_dir_name='dataset_0_aaaaa',
-                  whole_gt_json_path='D:/Libs/Pytorch/PNID/Tools/Predict_Postprocess/test_gt_global.json',
-                  whole_result_json_path='D:/Libs/Pytorch/PNID/Tools/Predict_Postprocess/test_dt_global.json')
+                  whole_gt_json_path='//Predict_Postprocess/test_gt_global.json',
+                  whole_result_json_path='//Predict_Postprocess/test_dt_global.json')
 

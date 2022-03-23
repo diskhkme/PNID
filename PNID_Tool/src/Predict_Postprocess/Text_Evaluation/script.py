@@ -1,10 +1,6 @@
-from itertools import permutations
 import rrc_evaluation_funcs
-import math
 
 import numpy as np
-import Polygon as polygon3
-from shapely.geometry import Point
 
 from file_utils import load_zip_file, decode_utf8
 from validation import validate_data
@@ -13,7 +9,6 @@ from arg_parser import PARAMS
 import concurrent.futures
 from tqdm import tqdm
 
-from tempfile import TemporaryFile
 from xml.etree.ElementTree import parse
 
 

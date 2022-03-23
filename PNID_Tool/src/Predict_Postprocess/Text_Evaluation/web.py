@@ -2,21 +2,16 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
-sys.path.append('./')
-import json
+sys.path.append('/')
 from io import BytesIO
 import zipfile
-import re
 from datetime import datetime
-import importlib
 import sqlite3
 import rrc_evaluation_funcs
 from config.config import *
 
 from validation import validate_data
 from script import cleval_evaluation
-
-from arg_parser import PARAMS
 
 try:
     from bottle import route, run, request, static_file, url, template, TEMPLATE_PATH, HTTPResponse, redirect

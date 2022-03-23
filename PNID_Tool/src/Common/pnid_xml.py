@@ -163,12 +163,11 @@ class xml_reader():
         self.filepath = filepath
         self.tree = parse(filepath)
         self.root = self.tree.getroot()
-        self.info = self.root.find("basic_drawing_information")
 
-        self.filename = self.info.findtext("filename")
-        self.width = int(self.info.find("size").findtext("width"))
-        self.height = int(self.info.find("size").findtext("height"))
-        self.depth = int(self.info.find("size").findtext("depth"))
+        self.filename = self.root.findtext("filename")
+        self.width = int(self.root.find("size").findtext("width"))
+        self.height = int(self.root.find("size").findtext("height"))
+        self.depth = int(self.root.find("size").findtext("depth"))
 
         self.object_list = []
 

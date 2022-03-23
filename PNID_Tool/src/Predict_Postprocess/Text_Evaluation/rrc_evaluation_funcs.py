@@ -1,6 +1,6 @@
 import json
 import pprint
-import sys;sys.path.append('./')
+import sys;sys.path.append('/')
 import zipfile
 import re
 import sys
