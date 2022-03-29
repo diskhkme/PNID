@@ -1,12 +1,12 @@
 path_info:
-  base_dir: 'G:/Test_Models/PNID/EWP_Data/'
+  base_dir: '/home/diskhkme/data/PNID/EWP/'
 
   # 이하 dir 및 path들은 모두 base_dir + XXX 로 정의됨
   drawing_img_dir: 'Drawing'
-  drawing_segment_img_out_dir: 'Drawing_Segment/Dataset_800_400_0.5_Text_Rotated'
+  drawing_segment_img_out_dir: 'Drawing_Segment/Dataset_800_300_0.5_Text_Rotated'
   symbol_xml_dir: 'SymbolXML'
   text_xml_dir: 'TextXML'
-  symbol_dict_path: 'EWP_SymbolClass_Sym_Only.txt'
+  symbol_dict_path: 'EWP_SymbolClass_sym_only.txt'
 
 val_test_ignore_def:
   train_drawings: # none이면, val, test를 제외하고 모두 train으로 사용
@@ -25,5 +25,5 @@ options:
   drawing_resize_scale: 0.5
   segment_width: 800
   segment_height: 800
-  segment_stride_w: 400
-  segment_stride_h: 400
+  segment_stride_w: 300
+  segment_stride_h: 300

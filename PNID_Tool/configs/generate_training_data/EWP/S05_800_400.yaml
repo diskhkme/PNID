@@ -1,0 +1,29 @@
+path_info:
+  base_dir: '/home/diskhkme/data/PNID/EWP/'
+
+  # 이하 dir 및 path들은 모두 base_dir + XXX 로 정의됨
+  drawing_img_dir: 'Drawing'
+  drawing_segment_img_out_dir: 'Drawing_Segment/Dataset_800_400_0.5_Text_Rotated'
+  symbol_xml_dir: 'SymbolXML'
+  text_xml_dir: 'TextXML'
+  symbol_dict_path: 'EWP_SymbolClass_sym_only.txt'
+
+val_test_ignore_def:
+  train_drawings: # none이면, val, test를 제외하고 모두 train으로 사용
+  val_drawings: ['KNU-A-22300-001-01', 'KNU-A-22300-001-03', 'KNU-A-36420-011-01',
+                'KNU-A-71710-003-01', 'KNU-B-11600-002-02', 'KNU-B-11600-003-01',
+                'KNU-B-36130-003-01', 'KNU-B-36420-019-01']
+  test_drawings: ["KNU-A-22300-001-04", "KNU-A-36420-014-03", "KNU-A-71710-003-02",
+                 "KNU-B-11600-002-03", "KNU-B-36420-019-04", "KNU-B-36610-002-05",
+                 "KNU-B-36610-004-01", "KNU-B-36610-005-03"]
+  ignore_drawing: ["KNU-B-11600-001-03"]
+
+options:
+  include_text_as_class: True # Text를 별도의 클래스로 포함할 것인지 {"text"}
+  include_text_orientation_as_class: True # 세로 문자열을 또다른 별도의 클래스로 포함할 것인지 {"text_rotated"},
+
+  drawing_resize_scale: 0.5
+  segment_width: 800
+  segment_height: 800
+  segment_stride_w: 400
+  segment_stride_h: 400

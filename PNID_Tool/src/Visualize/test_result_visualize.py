@@ -1,6 +1,6 @@
 import os
 import cv2
-from Visualize.image_drawing import draw_bbox_from_bbox_list
+from src.Visualize.image_drawing import draw_bbox_from_bbox_list
 
 mode_option = {1 : "1_GT" , 2 : "2_DT_All", 3 : "3_DT_NMS", 4 : "4_Matching_in_GT", 5 : "5_Matching_in_DT",
              6 : "6_Not_Matching_in_GT", 7 : "7_Not_Matching_in_DT", 8 : "8_Recognized_Text"}

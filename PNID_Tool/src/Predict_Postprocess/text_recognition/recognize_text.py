@@ -1,7 +1,7 @@
 import os
 import cv2
 import pytesseract
-from Common.print_progress import print_progress
+from src.Common.print_progress import print_progress
 from copy import deepcopy
 import matplotlib.pyplot as plt # debug purpose
 
@@ -13,7 +13,7 @@ def get_text_detection_result(dt_result, symbol_dict):
     return bboxes_text
 
 def recognize_text_using_tess(drawing_dir, dt_result_after_nms_text_only, text_img_margin_ratio, symbol_dict):
-    pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract'
+    pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
     dt_result_text = deepcopy(dt_result_after_nms_text_only)
     for filename, bboxes in dt_result_text.items():
         print(f"recognizing texts in {filename}")

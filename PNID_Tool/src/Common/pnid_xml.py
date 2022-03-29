@@ -240,16 +240,19 @@ class text_xml_reader(xml_reader):
     """
     텍스트 xml 파일 파싱 클래스
     """
-    def __init__(self,filepath):
+    def __init__(self,filepath, object_tag='object', degree_tag='orientation'):
         super().__init__(filepath)
+        self.object_tag = object_tag
+        self.degree_tag = degree_tag
 
-        for object in self.root.iter("symbol_object"):
+
+        for object in self.root.iter(self.object_tag):
             xmin = int(object.find("bndbox").findtext("xmin"))
             xmax = int(object.find("bndbox").findtext("xmax"))
             ymin = int(object.find("bndbox").findtext("ymin"))
             ymax = int(object.find("bndbox").findtext("ymax"))
             string = object.findtext("class")
-            orientation = int(math.ceil(float(object.findtext("degree")))) # 89.9991이 있음 (예외)
+            orientation = int(math.ceil(float(object.findtext(self.degree_tag)))) # 89.9991이 있음 (예외)
             self.object_list.append([string, xmin, ymin, xmax, ymax, orientation])
 
     def error_correction(self, img_dir, remove_spacing=True, newline_separation=True,

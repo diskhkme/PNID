@@ -3,10 +3,11 @@ import os, sys
 import io
 import numpy as np
 from copy import deepcopy
+import torch
 
-from Common.coco_json import coco_dt_json_reader, coco_json_write
-from Common.pnid_xml import symbol_xml_reader, text_xml_reader
-from Common.symbol_io import read_symbol_txt
+from src.Common.coco_json import coco_dt_json_reader, coco_json_write
+from src.Common.pnid_xml import symbol_xml_reader, text_xml_reader
+from src.Common.symbol_io import read_symbol_txt
 
 
 class gt_dt_data():
@@ -23,33 +24,47 @@ class gt_dt_data():
         score_threshold (float): 테스트 결과에서, score < score_threshold이면 score_filter 과정에서 제거
         nms_threshold (float): NMS threshold
     """
-    def __init__(self, gt_json_filepath, dt_json_filepath, drawing_dir, symbol_xml_dir, symbol_filepath, include_text_as_class, include_text_orientation_as_class, text_xml_dir,
-                 drawing_resize_scale, stride_w, stride_h,
-                 score_threshold = 0.5, nms_iou_threshold = 0.1, adaptive_thr_dict=None):
-        self.drawing_dir = drawing_dir
-        self.symbol_xml_dir = symbol_xml_dir
-        self.drawing_resize_scale = drawing_resize_scale
-        self.score_threshold = score_threshold
-
-        self.include_text_as_class = include_text_as_class
-        self.include_text_orientation_as_class = include_text_orientation_as_class
-        if include_text_as_class == True:
-            self.text_xml_dir = text_xml_dir
-
-        self.symbol_dict = read_symbol_txt(symbol_filepath, include_text_as_class, include_text_orientation_as_class)
-        self.nms_iou_threshold = nms_iou_threshold
-        self.adaptive_thr_dict = adaptive_thr_dict
+    def __init__(self, cfg):
+        self.parse_cfg(cfg)
 
         # 주요 생성 데이터-----------
         # 모든 데이터는 도면이름을 Key로, box 정보들을 value로 가지고 있음
         # 1) dt_result_raw: 분할 도면의 dt 결과를 좌표 변환만 한 데이터
-        self.dt_result_raw = coco_dt_json_reader(gt_json_filepath, dt_json_filepath, drawing_resize_scale, stride_w, stride_h).filename_to_global_bbox_dict
+        self.dt_result_raw = coco_dt_json_reader(self.test_gt_path, self.test_dt_path, self.drawing_resize_scale,
+                                                 self.segment_stride_w, self.segment_stride_h).filename_to_global_bbox_dict
         # 2) dt_result: 좌표 변환후 score 기반으로 필터링한 데이터
-        self.dt_result = self.score_filter(score_threshold)
+        self.dt_result = self.score_filter(self.score_threshold)
         # 3) gt_result: ground truth xml 데이터. (gt_result_json은 동일한 데이터를 coco json 형태로 변환한 것)
         self.gt_result_json, self.gt_result = self.parse_test_gt_xmls()
         # 4) dt_result_after_nms: score 기반으로 필터링 후 NMS를 수행한 데이터
         self.dt_result_after_nms = self.get_dt_result_nms(self.nms_iou_threshold)
+
+    def parse_cfg(self, cfg):
+        path_info = cfg['path_info']
+        options = cfg['options']
+        metric_param = cfg['metric_param']
+
+        self.test_gt_path = path_info['test_gt_path']
+        self.test_dt_path = path_info['test_dt_path']
+
+        self.drawing_dir = path_info['drawing_img_dir']
+        self.symbol_xml_dir = path_info['symbol_xml_dir']
+        self.include_text_as_class = options['include_text_as_class']
+        self.include_text_orientation_as_class = options['include_text_orientation_as_class']
+
+        self.symbol_dict = read_symbol_txt(path_info['symbol_dict_path'], self.include_text_as_class, self.include_text_orientation_as_class)
+        if options['include_text_as_class'] == True:
+            self.text_xml_dir = path_info['text_xml_dir']
+
+        self.drawing_resize_scale = options['drawing_resize_scale']
+        self.segment_stride_w = options['segment_stride_w']
+        self.segment_stride_h = options['segment_stride_h']
+
+        self.score_threshold = metric_param['score_threshold']
+
+        self.is_soft_nms = True if metric_param['nms_method'] == 'soft' else False
+        self.nms_iou_threshold = metric_param['nms_threshold']
+        self.adaptive_thr_dict = metric_param['adaptive_thr_dict']
 
     def merge_big_sym_result(self, big_gt_json_filepath, big_dt_json_filepath, drawing_resize_scale, big_sym_only=False):
         with open(big_gt_json_filepath, 'r') as f:
@@ -173,11 +188,108 @@ class gt_dt_data():
 
         filename_to_global_bbox_dict_after_nms = {}
         for img, bbox in self.dt_result.items():
+            if self.is_soft_nms:
+                nms_result = self.soft_nms(bbox, thresh=0.5)
+            else:
+                nms_result = self.non_max_suppression_fast(bbox, nms_threshold, adaptive_thr_dict=self.adaptive_thr_dict)
 
-            nms_result = self.non_max_suppression_fast(bbox, nms_threshold, adaptive_thr_dict=self.adaptive_thr_dict)
             filename_to_global_bbox_dict_after_nms[img] = nms_result
 
         return filename_to_global_bbox_dict_after_nms
+
+    def soft_nms(self, result_boxes, Nt=0.3, sigma=0.5, thresh=0.001, method=2):
+        """ 도면별 Box list에 대해 NMS 수행
+
+        Arguments:
+            dict result_boxes: [bbox], category_id, image_id 등등을 모두 가지고있는 bbox dict
+            float iou_threshold: NMS threshold
+            bool perClass: true면 동일 클래스끼리만 NMS 수행, false면 클래스 상관없이 NMS 수행
+
+        Return:
+            NMS 후 남아있는 result_boxes의 부분집합 dict
+        """
+
+        dets = [[x['bbox'][1], x['bbox'][0], x['bbox'][1]+x['bbox'][3], x['bbox'][0]+x['bbox'][2]] for x in result_boxes]
+        dets = np.array(dets)
+        sc = [x['score'] for x in result_boxes]
+        sc = np.array(sc)
+        classes = np.array([x["category_id"] for x in result_boxes])
+
+        # indexes concatenate boxes with the last column
+        N = dets.shape[0]
+        indexes = np.array([np.arange(N)])
+        dets = np.concatenate((dets, indexes.T), axis=1)
+
+        # the order of boxes coordinate is [y1,x1,y2,x2]
+        y1 = dets[:, 0]
+        x1 = dets[:, 1]
+        y2 = dets[:, 2]
+        x2 = dets[:, 3]
+        scores = sc
+        areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+
+        for i in range(N):
+            # intermediate parameters for later parameters exchange
+            tBD = dets[i, :].copy()
+            tscore = scores[i].copy()
+            tarea = areas[i].copy()
+            cls = classes[i]
+            pos = i + 1
+
+            #
+            if i != N - 1:
+                maxscore = np.max(scores[pos:], axis=0)
+                maxpos = np.argmax(scores[pos:], axis=0)
+            else:
+                maxscore = scores[-1]
+                maxpos = 0
+            if tscore < maxscore:
+                dets[i, :] = dets[maxpos + i + 1, :]
+                dets[maxpos + i + 1, :] = tBD
+                tBD = dets[i, :]
+
+                scores[i] = scores[maxpos + i + 1]
+                scores[maxpos + i + 1] = tscore
+                tscore = scores[i]
+
+                areas[i] = areas[maxpos + i + 1]
+                areas[maxpos + i + 1] = tarea
+                tarea = areas[i]
+
+            # IoU calculate
+            xx1 = np.maximum(dets[i, 1], dets[pos:, 1])
+            yy1 = np.maximum(dets[i, 0], dets[pos:, 0])
+            xx2 = np.minimum(dets[i, 3], dets[pos:, 3])
+            yy2 = np.minimum(dets[i, 2], dets[pos:, 2])
+
+            w = np.maximum(0.0, xx2 - xx1 + 1)
+            h = np.maximum(0.0, yy2 - yy1 + 1)
+            inter = w * h
+            ovr = inter / (areas[i] + areas[pos:] - inter)
+
+            # Three methods: 1.linear 2.gaussian 3.original NMS
+            if method == 1:  # linear
+                weight = np.ones(ovr.shape)
+                weight[ovr > Nt] = weight[ovr > Nt] - ovr[ovr > Nt]
+            elif method == 2:  # gaussian
+                weight = np.exp(-(ovr * ovr) / sigma)
+            else:  # original NMS
+                weight = np.ones(ovr.shape)
+                weight[ovr > Nt] = 0
+
+            # scores[pos:] = weight * scores[pos:]
+            # if i==620:
+            #     k=1
+            # cls_filter = np.where(classes == cls)
+            # cls_filter = np.delete(cls_filter[0], np.where(cls_filter[0] <= i))
+            # scores[cls_filter] = weight[cls_filter-pos] * scores[cls_filter]
+            scores[pos:] = weight * scores[pos:]
+
+        # select the boxes and keep the corresponding indexes
+        inds = dets[:, 4][scores >= thresh]
+        keep = inds.astype(int)
+
+        return [result_boxes[i] for i in keep]
 
     # TODO : mmcv의 SoftNMX 사용
     def non_max_suppression_fast(self, result_boxes, iou_threshold, perClass=True, adaptive_thr_dict=None):

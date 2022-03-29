@@ -25,6 +25,21 @@ def get_generate_training_data_config(config_file):
 
     return cfg
 
+def get_predict_postprocess_config(config_file):
+    with open(config_file, 'r') as f:
+        cfg = yaml.load(f, Loader=yaml.loader.SafeLoader)
+
+    # relative path to absolute
+    cfg['path_info']['drawing_img_dir'] = os.path.join(cfg['path_info']['base_dir'],cfg['path_info']['drawing_img_dir'])
+    cfg['path_info']['symbol_xml_dir'] = os.path.join(cfg['path_info']['base_dir'],cfg['path_info']['symbol_xml_dir'])
+    cfg['path_info']['text_xml_dir'] = os.path.join(cfg['path_info']['base_dir'],cfg['path_info']['text_xml_dir'])
+    cfg['path_info']['symbol_dict_path'] = os.path.join(cfg['path_info']['base_dir'],cfg['path_info']['symbol_dict_path'])
+    cfg['path_info']['symbol_type_dict_path'] = os.path.join(cfg['path_info']['base_dir'],cfg['path_info']['symbol_dict_path'])
+
+    _check_dir(cfg['path_info']['output_dir'], make_dir=True)
+
+    return cfg
+
 # def get_train_config(config_file='config/train_config_res_gcn.yaml'):
 #     with open(config_file, 'r') as f:
 #         cfg = yaml.load(f, Loader=yaml.loader.SafeLoader)

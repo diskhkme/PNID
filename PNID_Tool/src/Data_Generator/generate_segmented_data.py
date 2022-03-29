@@ -178,11 +178,11 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, include_text
                             [sub_img_filename, symbol_dict["text_rotated"], txt_object_list[i][1] - start_width,
                              txt_object_list[i][2] - start_height,
                              txt_object_list[i][3] - start_width, txt_object_list[i][4] - start_height])
-                    if txt_object_list[i][5] == 45:
-                        seg_obj_info.append(
-                            [sub_img_filename, symbol_dict["text_rotated_45"], txt_object_list[i][1] - start_width,
-                             txt_object_list[i][2] - start_height,
-                             txt_object_list[i][3] - start_width, txt_object_list[i][4] - start_height])
+                    # if txt_object_list[i][5] == 45:
+                    #     seg_obj_info.append(
+                    #         [sub_img_filename, symbol_dict["text_rotated_45"], txt_object_list[i][1] - start_width,
+                    #          txt_object_list[i][2] - start_height,
+                    #          txt_object_list[i][3] - start_width, txt_object_list[i][4] - start_height])
                 else:
                     seg_obj_info.append([sub_img_filename, symbol_dict["text"], txt_object_list[i][1] - start_width, txt_object_list[i][2] - start_height,
                                          txt_object_list[i][3] - start_width, txt_object_list[i][4] - start_height])

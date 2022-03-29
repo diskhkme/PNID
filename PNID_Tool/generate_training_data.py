@@ -51,7 +51,7 @@ def generate_train_dataset(cfg):
 
 
 if __name__ == '__main__':
-    cfg_path = 'configs/generate_training_data/EWP/S05_800_400.yaml'
+    cfg_path = 'configs/generate_training_data/EWP/S05_800_300.yaml'
     if len(sys.argv) > 1:
         cfg_path = sys.argv[1]
 
