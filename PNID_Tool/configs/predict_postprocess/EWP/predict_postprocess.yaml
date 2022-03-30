@@ -1,8 +1,8 @@
 path_info:
   test_gt_path: '/home/diskhkme/data/PNID/EWP/Drawing_Segment/Dataset_800_300_0.5_Text_Rotated/test.json' # 학습 도면 분할시 생성한 test.json 파일 경로
-  test_dt_path: '/home/diskhkme/Libs/_PNID/mmdetection/work-dir/s05_800_300_text_rotate/sparse_rcnn_r50_fpn/result/result.bbox.json' # prediction 결과로 mmdetection에서 생성된 json 파일 경로
+  test_dt_path: '/home/diskhkme/Libs/_PNID/mmdetection/work-dir/s05_800_300_text_rotate/swin_t_fpn/result/result.bbox.json' # prediction 결과로 mmdetection에서 생성된 json 파일 경로
   test_big_sym_dt_path:
-  output_dir: "/home/diskhkme/Libs/_PNID/mmdetection/work-dir/s05_800_300_text_rotate/sparse_rcnn_r50_fpn/result_soft/" # 출력 파일들이 저장될 폴더
+  output_dir: "/home/diskhkme/Libs/_PNID/mmdetection/work-dir/s05_800_300_text_rotate/swin_t_fpn/result_soft/" # 출력 파일들이 저장될 폴더
 
   base_dir: '/home/diskhkme/data/PNID/EWP/'
 

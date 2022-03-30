@@ -4,6 +4,7 @@ PNID_Tool/.idea/
 /__pycache__
 __pycache__/
 *.json
+*.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
