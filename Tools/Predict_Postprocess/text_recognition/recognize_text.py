@@ -8,7 +8,11 @@ import matplotlib.pyplot as plt # debug purpose
 def get_text_detection_result(dt_result, symbol_dict):
     bboxes_text = {}
     for filename, bboxes in dt_result.items():
-        bboxes_text[filename] = [x for x in bboxes if x["category_id"] == symbol_dict["text"] or x["category_id"] == symbol_dict["text_rotated"] or x["category_id"] == symbol_dict["text_rotated_45"]]
+        bboxes_text[filename] = [x for x in bboxes if x["category_id"] == symbol_dict["text"] ]
+        if "text_rotated" in symbol_dict.keys():
+            bboxes_text[filename] += [x for x in bboxes if x["category_id"] == symbol_dict["text_rotated"] ]
+        if "text_rotated_45" in symbol_dict.keys():
+            bboxes_text[filename] += [x for x in bboxes if x["category_id"] == symbol_dict["text_rotated_45"] ]
 
     return bboxes_text
 
@@ -36,13 +40,14 @@ def recognize_text_using_tess(drawing_dir, dt_result_after_nms_text_only, text_i
 
                 # if height > width * vertical_threshold: # 세로 문자열로 판단, aspect ratio 기준
                 #     sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)
-
-                if bboxes[i]["category_id"] == symbol_dict["text_rotated"]: # 세로 문자열로 판단, "text_rotated 카테고리일경우"
-                    sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)
-                if bboxes[i]["category_id"] == symbol_dict["text_rotated_45"]: # 45도 문자열로 판단, "text_rotated_45 카테고리일경우"
-                    center = (width//2, height//2)
-                    rot_matrix = cv2.getRotationMatrix2D(center, 45, 1.0)
-                    sub_img = cv2.warpAffine(sub_img, rot_matrix, (width,height))
+                if "text_rotated" in symbol_dict.keys():
+                    if bboxes[i]["category_id"] == symbol_dict["text_rotated"]: # 세로 문자열로 판단, "text_rotated 카테고리일경우"
+                        sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)
+                if "text_rotated_45" in symbol_dict.keys():
+                    if bboxes[i]["category_id"] == symbol_dict["text_rotated_45"]: # 45도 문자열로 판단, "text_rotated_45 카테고리일경우"
+                        center = (width//2, height//2)
+                        rot_matrix = cv2.getRotationMatrix2D(center, 45, 1.0)
+                        sub_img = cv2.warpAffine(sub_img, rot_matrix, (width,height))
 
 
                 result_str = pytesseract.image_to_data(sub_img, config="--oem 3 --psm 6")
@@ -50,7 +55,8 @@ def recognize_text_using_tess(drawing_dir, dt_result_after_nms_text_only, text_i
 
                 bboxes[i]["string"] = recognized_text
                 bboxes[i]["string_conf"] = conf
-
+                
+        print('')
 
                 # if height > width * vertical_threshold: # 세로 문자열로 판단
                 #     sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)
@@ -79,7 +85,7 @@ def parse_tess_result(result_str):
         res = result.split("\t")
         if res[0] == '5':
             count += 1
-            confidence += int(res[-2])
+            confidence += int(float(res[-2]))
             result_string = result_string + res[-1]
 
     if count == 0:

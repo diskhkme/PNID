@@ -24,7 +24,7 @@ def generate_segmented_data(xml_list, drawing_dir, drawing_segment_dir, segment_
     entire_segmented_info = []
 
     for xmlPath in xml_list:
-        print(f"Proceccing {xmlPath}...")
+        print(f"Proceccing {xmlPath} ...")
         fname, ext = os.path.splitext(xmlPath)
         if ext.lower() != ".xml":
             continue

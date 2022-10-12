@@ -13,6 +13,7 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
         root = Element("annotation")
 
         # add basic_drawing_information_node start
+        '''
         width, height, depth = img_shape_tuple
         basic_drawing_information_node = Element('basic_drawing_information')
 
@@ -24,16 +25,15 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
 
         size_node = ET.SubElement(basic_drawing_information_node, "size")
         width_node = ET.SubElement(size_node, "width")
-        height_node = ET.SubElement(size_node, "width")
-        depth_node = ET.SubElement(size_node, "width")
+        height_node = ET.SubElement(size_node, "height")
+        depth_node = ET.SubElement(size_node, "depth")
 
         width_node.text = str(width)
         height_node.text = str(height)
         depth_node.text = str(depth)
 
-        root.append(basic_drawing_information_node)
-        # add basic_drawing_information_node end
-
+        root.append(basic_drawing_information_node)        # add basic_drawing_information_node end
+        '''
 
         for object in objects:
 
@@ -46,11 +46,11 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
             if "text_rotated_45" in symbol_dict.keys() and category_id == symbol_dict["text_rotated_45"]:
                 continue
 
-            object_node = Element("symbol_object")
+            symbol_node = Element("symbol_object")
 
-            name_node = Element("class")
+            class_node = Element("class")
             symbol_name = [sym_name for sym_name, id in symbol_dict.items() if id == object["category_id"]][0]
-            name_node.text = symbol_name
+            class_node.text = symbol_name
 
             if symbol_type_dict is not None:
                 type_node = Element("type")
@@ -82,14 +82,14 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
             etc_node.text = ""
 
             if symbol_type_dict is not None:
-                object_node.append(type_node)
-            object_node.append(name_node)
-            object_node.append(bndbox_node)
-            object_node.append(degree_node)
-            object_node.append(flip_node)
-            object_node.append(etc_node)
+                symbol_node.append(type_node)
+            symbol_node.append(class_node)
+            symbol_node.append(bndbox_node)
+            symbol_node.append(degree_node)
+            symbol_node.append(flip_node)
+            symbol_node.append(etc_node)
 
-            root.append(object_node)
+            root.append(symbol_node)
 
         indent(root)
         out_path = os.path.join(out_dir, f"{filename}.xml")
@@ -99,24 +99,26 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
 def write_text_result_to_xml(out_dir, dt_result_text, symbol_dict):
     for filename, objects in dt_result_text.items():
         root = Element("annotation")
-        filename_node = Element("filename")
-        filename_node.text = f"{filename}.jpg"
-        root.append(filename_node)
+        #filename_node = Element("filename")
+        #filename_node.text = f"{filename}.jpg"
+        #root.append(filename_node)
         for object in objects:
+            symbol_node = Element("symbol_object")
 
-            object_node = Element("object")
+            type_node = Element("type")
+            type_node.text = "text"
 
-            string_node = Element("string")
-            string_node.text = object["string"]
+            class_node = Element("class")
+            class_node.text = object["string"]
 
-            orientation_node = Element("orientation")
+            degree_node = Element("degree")
             category_id = object["category_id"]
             if 'text_rotated' in symbol_dict.keys() and category_id == symbol_dict["text_rotated"]:
-                orientation_node.text = str(90)
+                degree_node.text = str(90)
             elif 'text_rotated_45' in symbol_dict.keys() and category_id == symbol_dict["text_rotated_45"]:
-                orientation_node.text = str(45)
+                degree_node.text = str(45)
             else:
-                orientation_node.text = str(0)
+                degree_node.text = str(0)
 
             bndbox_node = Element("bndbox")
 
@@ -129,15 +131,25 @@ def write_text_result_to_xml(out_dir, dt_result_text, symbol_dict):
             ymax_node = Element("ymax")
             ymax_node.text = str(object["bbox"][1] + object["bbox"][3])
 
+
+            flip_node = Element("flip")
+            flip_node.text = "n"
+
+            etc_node = Element("etc")
+            etc_node.text = ""
+
             bndbox_node.append(xmin_node)
             bndbox_node.append(ymin_node)
             bndbox_node.append(xmax_node)
             bndbox_node.append(ymax_node)
 
-            object_node.append(string_node)
-            object_node.append(orientation_node)
-            object_node.append(bndbox_node)
-            root.append(object_node)
+            symbol_node.append(type_node)
+            symbol_node.append(class_node)
+            symbol_node.append(bndbox_node)
+            symbol_node.append(degree_node)
+            symbol_node.append(flip_node)
+            symbol_node.append(etc_node)
+            root.append(symbol_node)
 
         indent(root)
         out_path = os.path.join(out_dir, f"{filename}_text.xml")
@@ -163,12 +175,11 @@ class xml_reader():
         self.filepath = filepath
         self.tree = parse(filepath)
         self.root = self.tree.getroot()
-        self.info = self.root.find("basic_drawing_information")
 
-        self.filename = self.info.findtext("filename")
-        self.width = int(self.info.find("size").findtext("width"))
-        self.height = int(self.info.find("size").findtext("height"))
-        self.depth = int(self.info.find("size").findtext("depth"))
+        self.filename = self.root.findtext("filename")
+        self.width = int(self.root.find("size").findtext("width"))
+        self.height = int(self.root.find("size").findtext("height"))
+        self.depth = int(self.root.find("size").findtext("depth"))
 
         self.object_list = []
 
@@ -241,16 +252,19 @@ class text_xml_reader(xml_reader):
     """
     텍스트 xml 파일 파싱 클래스
     """
-    def __init__(self,filepath):
+    def __init__(self,filepath, object_tag='object', degree_tag='orientation'):
         super().__init__(filepath)
+        self.object_tag = object_tag
+        self.degree_tag = degree_tag
 
-        for object in self.root.iter("symbol_object"):
+
+        for object in self.root.iter(self.object_tag):
             xmin = int(object.find("bndbox").findtext("xmin"))
             xmax = int(object.find("bndbox").findtext("xmax"))
             ymin = int(object.find("bndbox").findtext("ymin"))
             ymax = int(object.find("bndbox").findtext("ymax"))
             string = object.findtext("class")
-            orientation = int(math.ceil(float(object.findtext("degree")))) # 89.9991이 있음 (예외)
+            orientation = int(math.ceil(float(object.findtext(self.degree_tag)))) # 89.9991이 있음 (예외)
             self.object_list.append([string, xmin, ymin, xmax, ymax, orientation])
 
     def error_correction(self, img_dir, remove_spacing=True, newline_separation=True,
