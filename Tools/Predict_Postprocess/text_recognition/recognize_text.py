@@ -1,6 +1,7 @@
 import os
 import cv2
 import pytesseract
+import time
 from Common.print_progress import print_progress
 from copy import deepcopy
 import matplotlib.pyplot as plt # debug purpose
@@ -20,6 +21,7 @@ def recognize_text_using_tess(drawing_dir, dt_result_after_nms_text_only, text_i
     pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract'
     dt_result_text = deepcopy(dt_result_after_nms_text_only)
     for filename, bboxes in dt_result_text.items():
+        t1 = time.time()
         print(f"recognizing texts in {filename}")
         drawing_path = os.path.join(drawing_dir, f"{filename}.jpg")
         if os.path.exists(drawing_path) == True:
@@ -57,6 +59,7 @@ def recognize_text_using_tess(drawing_dir, dt_result_after_nms_text_only, text_i
                 bboxes[i]["string_conf"] = conf
                 
         print('')
+        print('elapsed time : ', time.time() - t1)
 
                 # if height > width * vertical_threshold: # 세로 문자열로 판단
                 #     sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)

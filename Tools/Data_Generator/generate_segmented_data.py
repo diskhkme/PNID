@@ -41,17 +41,17 @@ def generate_segmented_data(xml_list, drawing_dir, drawing_segment_dir, segment_
         if include_text_as_class == True and os.path.exists(os.path.join(text_xml_dir, os.path.basename(xmlPath))):
             text_xml_reader_obj = text_xml_reader(os.path.join(text_xml_dir, os.path.basename(xmlPath)))
             _, _, _, _, txt_object_list = text_xml_reader_obj.getInfo()
-            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, txt_object_list, include_text_orientation_as_class,
+            segmented_objects_info = segment_write_images(img_file_path, drawing_segment_dir, object_list, txt_object_list, include_text_orientation_as_class,
                                                     symbol_dict, segment_params, drawing_resize_scale, prefix)
         else:
-            segmented_objects_info = segment_images(img_file_path, drawing_segment_dir, object_list, None, None,
+            segmented_objects_info = segment_write_images(img_file_path, drawing_segment_dir, object_list, None, None,
                                                     symbol_dict, segment_params, drawing_resize_scale, prefix)
 
         entire_segmented_info.extend(segmented_objects_info)
 
     return entire_segmented_info
 
-def segment_images(img_path, seg_out_dir, objects, txt_object_list, include_text_orientation_as_class, symbol_dict, segment_params, drawing_resize_scale, prefix):
+def segment_write_images(img_path, seg_out_dir, objects, txt_object_list, include_text_orientation_as_class, symbol_dict, segment_params, drawing_resize_scale, prefix):
     """ 각 도면에 대해 분할 도면을 생성하고 분할된 파일로 저장
 
     Arguments:
@@ -76,7 +76,6 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, include_text
     height_size = segment_params[1]
     width_stride = segment_params[2]
     height_stride = segment_params[3]
-
 
     bbox_array = np.zeros((len(objects),4))
     for ind in range(len(objects)):
@@ -210,3 +209,53 @@ def segment_images(img_path, seg_out_dir, objects, txt_object_list, include_text
             # plt.show()
 
     return seg_obj_info
+
+def segment_image(img, segment_params):
+    """ 하나의 도면을 분할하고 리스트 형태로 리턴
+
+    Arguments:
+        img_path (string): 원본 이미지 파일 경로
+        segment_params (list): 분할 파라메터 [가로 크기, 세로 크기, 가로 stride, 세로 stride]
+
+    Return:
+        seg_imgs (list): 분할된 이미지 리스트
+    """
+
+    width_size = segment_params[0]
+    height_size = segment_params[1]
+    width_stride = segment_params[2]
+    height_stride = segment_params[3]
+
+    seg_imgs = []
+    start_height = 0
+    h_index = 0
+
+    while start_height < img.shape[0]: # 1픽셀때문에 이미지를 하나 더 만들 필요는 없음
+
+        start_width = 0
+        w_index = 0
+        row_imgs = []
+
+        while start_width < img.shape[1]:
+            sub_img = np.ones((height_size, width_size, 3)) * 255
+            if start_width+width_size > img.shape[1] and start_height+height_size > img.shape[0]:
+                sub_img[0:img.shape[0] - (start_height + height_size),
+                        0:img.shape[1] - (start_width + width_size), :] = img[start_height:start_height + height_size,
+                                                                             start_width:start_width + width_size, :]
+            elif start_width+width_size > img.shape[1]:
+                sub_img[:, 0:img.shape[1]-(start_width+width_size), :] = img[start_height:start_height+height_size, start_width:img.shape[1],:]
+            elif start_height+height_size > img.shape[0]:
+                sub_img[0:img.shape[0] - (start_height + height_size), : , :] = img[start_height:img.shape[0], start_width:start_width+width_size, :]
+            else:
+                sub_img = img[start_height:start_height+height_size, start_width:start_width+width_size, :]
+
+            row_imgs.append(sub_img)
+
+            start_width += width_stride
+            w_index += 1
+
+        start_height += height_stride
+        h_index += 1
+        seg_imgs.append(row_imgs)
+
+    return seg_imgs

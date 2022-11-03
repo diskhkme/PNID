@@ -231,7 +231,10 @@ class gt_dt_data():
             intersection = w_ * h_
 
             # Calculate the iou
-            iou = intersection / (area[idxs[:last]] + area[idxs[last]] - intersection)
+            try:
+                iou = intersection / (area[idxs[:last]] + area[idxs[last]] - intersection)
+            except ZeroDivisionError:
+                print('Zero division occurred in NMS -> IOU calculation')
 
             if perClass:  # perClass == true인 경우에는, class index가 같은 경우에만 삭제 대상
                 if adaptive_thr_dict is not None and c in adaptive_thr_dict.keys():
