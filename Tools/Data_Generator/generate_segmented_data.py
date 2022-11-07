@@ -210,7 +210,7 @@ def segment_write_images(img_path, seg_out_dir, objects, txt_object_list, includ
 
     return seg_obj_info
 
-def segment_image(img, segment_params):
+def segment_image(img_path, segment_params, drawing_resize_scale):
     """ 하나의 도면을 분할하고 리스트 형태로 리턴
 
     Arguments:
@@ -220,6 +220,8 @@ def segment_image(img, segment_params):
     Return:
         seg_imgs (list): 분할된 이미지 리스트
     """
+    img = cv2.imread(img_path)
+    img = cv2.resize(img, dsize=(0,0), fx=drawing_resize_scale, fy=drawing_resize_scale, interpolation=cv2.INTER_LINEAR)
 
     width_size = segment_params[0]
     height_size = segment_params[1]
@@ -231,10 +233,8 @@ def segment_image(img, segment_params):
     h_index = 0
 
     while start_height < img.shape[0]: # 1픽셀때문에 이미지를 하나 더 만들 필요는 없음
-
         start_width = 0
         w_index = 0
-        row_imgs = []
 
         while start_width < img.shape[1]:
             sub_img = np.ones((height_size, width_size, 3)) * 255
@@ -249,13 +249,21 @@ def segment_image(img, segment_params):
             else:
                 sub_img = img[start_height:start_height+height_size, start_width:start_width+width_size, :]
 
-            row_imgs.append(sub_img)
+            seg_imgs.append(
+                {
+                    'w' : w_index,
+                    'h' : h_index,
+                    'img' : sub_img
+                }
+            )
+            
+            sub_img_filename = f"C:\\Users\\DongwonJeong\\Desktop\\seg\\{h_index}_{w_index}.jpg"
+            cv2.imwrite(sub_img_filename, sub_img)
 
             start_width += width_stride
             w_index += 1
 
         start_height += height_stride
         h_index += 1
-        seg_imgs.append(row_imgs)
 
     return seg_imgs

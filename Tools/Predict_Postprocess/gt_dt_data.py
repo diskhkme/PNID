@@ -174,81 +174,81 @@ class gt_dt_data():
         filename_to_global_bbox_dict_after_nms = {}
         for img, bbox in self.dt_result.items():
 
-            nms_result = self.non_max_suppression_fast(bbox, nms_threshold, adaptive_thr_dict=self.adaptive_thr_dict)
+            nms_result = non_max_suppression_fast(bbox, nms_threshold, adaptive_thr_dict=self.adaptive_thr_dict)
             filename_to_global_bbox_dict_after_nms[img] = nms_result
 
         return filename_to_global_bbox_dict_after_nms
 
     # TODO : mmcv의 SoftNMX 사용
-    def non_max_suppression_fast(self, result_boxes, iou_threshold, perClass=True, adaptive_thr_dict=None):
-        """ 도면별 Box list에 대해 NMS 수행
+def non_max_suppression_fast(result_boxes, iou_threshold, perClass=True, adaptive_thr_dict=None):
+    """ 도면별 Box list에 대해 NMS 수행
 
-        Arguments:
-            dict result_boxes: [bbox], category_id, image_id 등등을 모두 가지고있는 bbox dict
-            float iou_threshold: NMS threshold
-            bool perClass: true면 동일 클래스끼리만 NMS 수행, false면 클래스 상관없이 NMS 수행
+    Arguments:
+        dict result_boxes: [bbox], category_id, image_id 등등을 모두 가지고있는 bbox dict
+        float iou_threshold: NMS threshold
+        bool perClass: true면 동일 클래스끼리만 NMS 수행, false면 클래스 상관없이 NMS 수행
 
-        Return:
-            NMS 후 남아있는 result_boxes의 부분집합 dict
-        """
+    Return:
+        NMS 후 남아있는 result_boxes의 부분집합 dict
+    """
 
-        boxes = np.array([x["bbox"] for x in result_boxes])
-        classes = np.array([x["category_id"] for x in result_boxes])
-        scores = np.array([x["score"] for x in result_boxes])
+    boxes = np.array([x["bbox"] for x in result_boxes])
+    classes = np.array([x["category_id"] for x in result_boxes])
+    scores = np.array([x["score"] for x in result_boxes])
 
-        if boxes.shape[0] == 0:
-            return []
+    if boxes.shape[0] == 0:
+        return []
 
-        # Init the picked box info
-        pick = []
+    # Init the picked box info
+    pick = []
 
-        # Box coordinate consist of left top and right bottom
-        x1 = boxes[:, 0]
-        y1 = boxes[:, 1]
-        w = boxes[:, 2]
-        h = boxes[:, 3]
+    # Box coordinate consist of left top and right bottom
+    x1 = boxes[:, 0]
+    y1 = boxes[:, 1]
+    w = boxes[:, 2]
+    h = boxes[:, 3]
 
-        # Compute area of each boxes
-        area = w * h
+    # Compute area of each boxes
+    area = w * h
 
-        # Greedily select the order of box to compare iou
-        idxs = np.argsort(scores)
+    # Greedily select the order of box to compare iou
+    idxs = np.argsort(scores)
 
-        while len(idxs) > 0:
-            last = len(idxs) - 1  # Scrore가 가장 높은 박스
-            i = idxs[last]  # Score가 가장 높은 박스의 인덱스
-            c = classes[i]
-            pick.append(i)  # Score가 가장 높은 박스의 인덱스를 pick에 저장
+    while len(idxs) > 0:
+        last = len(idxs) - 1  # Scrore가 가장 높은 박스
+        i = idxs[last]  # Score가 가장 높은 박스의 인덱스
+        c = classes[i]
+        pick.append(i)  # Score가 가장 높은 박스의 인덱스를 pick에 저장
 
-            # With vector implementation, we can calculate fast
-            xx1 = np.maximum(x1[i], x1[idxs[:last]])  # Score가 가장 높은 박스와 나머지 박스의 좌표 비교
-            yy1 = np.maximum(y1[i], y1[idxs[:last]])
-            xx2 = np.minimum(x1[i] + w[i], x1[idxs[:last]] + w[idxs[:last]])
-            yy2 = np.minimum(y1[i] + h[i], y1[idxs[:last]] + h[idxs[:last]])
+        # With vector implementation, we can calculate fast
+        xx1 = np.maximum(x1[i], x1[idxs[:last]])  # Score가 가장 높은 박스와 나머지 박스의 좌표 비교
+        yy1 = np.maximum(y1[i], y1[idxs[:last]])
+        xx2 = np.minimum(x1[i] + w[i], x1[idxs[:last]] + w[idxs[:last]])
+        yy2 = np.minimum(y1[i] + h[i], y1[idxs[:last]] + h[idxs[:last]])
 
-            w_ = np.maximum(0, xx2 - xx1 + 1)
-            h_ = np.maximum(0, yy2 - yy1 + 1)
-            intersection = w_ * h_
+        w_ = np.maximum(0, xx2 - xx1 + 1)
+        h_ = np.maximum(0, yy2 - yy1 + 1)
+        intersection = w_ * h_
 
-            # Calculate the iou
-            try:
-                iou = intersection / (area[idxs[:last]] + area[idxs[last]] - intersection)
-            except ZeroDivisionError:
-                print('Zero division occurred in NMS -> IOU calculation')
+        # Calculate the iou
+        try:
+            iou = intersection / (area[idxs[:last]] + area[idxs[last]] - intersection)
+        except ZeroDivisionError:
+            print('Zero division occurred in NMS -> IOU calculation')
 
-            if perClass:  # perClass == true인 경우에는, class index가 같은 경우에만 삭제 대상
-                if adaptive_thr_dict is not None and c in adaptive_thr_dict.keys():
-                    iou_threshold_for_adaptive_thr = adaptive_thr_dict[c]
-                    outCheck = (iou > iou_threshold_for_adaptive_thr)
-                else:
-                    outCheck = (iou > iou_threshold)
-                sameClassCheck = (classes[idxs[:last]] == c)
-                allCheck = sameClassCheck & outCheck
-                idxs = np.delete(idxs, np.concatenate(([last], np.where(allCheck)[0])))
+        if perClass:  # perClass == true인 경우에는, class index가 같은 경우에만 삭제 대상
+            if adaptive_thr_dict is not None and c in adaptive_thr_dict.keys():
+                iou_threshold_for_adaptive_thr = adaptive_thr_dict[c]
+                outCheck = (iou > iou_threshold_for_adaptive_thr)
             else:
-                idxs = np.delete(idxs, np.concatenate(([last], np.where(iou > iou_threshold)[0])))
+                outCheck = (iou > iou_threshold)
+            sameClassCheck = (classes[idxs[:last]] == c)
+            allCheck = sameClassCheck & outCheck
+            idxs = np.delete(idxs, np.concatenate(([last], np.where(allCheck)[0])))
+        else:
+            idxs = np.delete(idxs, np.concatenate(([last], np.where(iou > iou_threshold)[0])))
 
-        return [result_boxes[i] for i in pick]
+    return [result_boxes[i] for i in pick]
 
 # if __name__ == '__main__':
 #     gt_json_filepath = "D:/Test_Models/PNID/EWP_Data/Wonyong_Segment/dataset_2/test.json"
