@@ -25,8 +25,8 @@ def recognize_text(image_path, nms_result, text_img_margin_ratio, symbol_dict):
     for filename, bboxes in dt_result_text.items():
         image = cv2.imread(image_path)
         img_shape= image.shape
-        img_height = img_shape[0] - 1
-        img_width = img_shape[1] - 1
+        img_height = img_shape[0]
+        img_width = img_shape[1]
 
         for i in range(len(bboxes)):
             new_box = deepcopy(bboxes[i])
@@ -34,19 +34,23 @@ def recognize_text(image_path, nms_result, text_img_margin_ratio, symbol_dict):
             print_progress(i,len(bboxes), 'Progress:', 'Complete')
             box_coord = bboxes[i]["bbox"] # [x, y, width, height]
 
-            if box_coord[0] > img_height or box_coord[1] > img_width:
-                continue
-
             height = int(box_coord[3] * (1 + text_img_margin_ratio))
             width = int(box_coord[2] * (1 + text_img_margin_ratio))
 
             x_mid = (box_coord[0] + box_coord[0] + box_coord[2]) / 2
-            x_min = max(int(x_mid - width / 2), 0)
+            x_min = int(x_mid - width / 2)
             y_mid = (box_coord[1] + box_coord[1] + box_coord[3]) / 2
-            y_min = max(int(y_mid - height / 2), 0)
+            y_min = int(y_mid - height / 2)
 
-            x_max = min(x_min + width, img_width)
-            y_max = min(y_min + height, img_height)
+            x_max = x_min + width
+            y_max = y_min + height
+
+            if x_min < 0 or y_min < 0 or x_max >= img_width or y_max >= img_height:
+                continue
+
+            if width <= 0 or height <= 0:
+                continue
+
             sub_img = image[y_min:y_max, x_min:x_max, :]
 
             # if height > width * vertical_threshold: # 세로 문자열로 판단, aspect ratio 기준

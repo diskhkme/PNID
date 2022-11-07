@@ -212,13 +212,6 @@ def segment_write_images(img_path, seg_out_dir, objects, txt_object_list, includ
 
 def segment_image(img_path, segment_params, drawing_resize_scale):
     """ 하나의 도면을 분할하고 리스트 형태로 리턴
-
-    Arguments:
-        img_path (string): 원본 이미지 파일 경로
-        segment_params (list): 분할 파라메터 [가로 크기, 세로 크기, 가로 stride, 세로 stride]
-
-    Return:
-        seg_imgs (list): 분할된 이미지 리스트
     """
     img = cv2.imread(img_path)
     img = cv2.resize(img, dsize=(0,0), fx=drawing_resize_scale, fy=drawing_resize_scale, interpolation=cv2.INTER_LINEAR)
@@ -257,8 +250,8 @@ def segment_image(img_path, segment_params, drawing_resize_scale):
                 }
             )
             
-            sub_img_filename = f"C:\\Users\\DongwonJeong\\Desktop\\seg\\{h_index}_{w_index}.jpg"
-            cv2.imwrite(sub_img_filename, sub_img)
+            # sub_img_filename = f"C:\\Users\\DongwonJeong\\Desktop\\seg\\{h_index}_{w_index}.jpg"
+            # cv2.imwrite(sub_img_filename, sub_img)
 
             start_width += width_stride
             w_index += 1

@@ -51,18 +51,16 @@ def load_model(config: str, checkpoint: str):
     return model
 
 def score_filtering(result, score_threshold):
-    ''' 이미지 하나의 결과 -> threshold 적용된 결과
-    '''
     filtered = []
-
     for category in result:
         filtered.append([x for x in category if x[4] >= score_threshold])
     
     return filtered
-    # return np_result[np.where(np_result[:, 4] > score_threshold)]
 
 def change_obj_format(obj: list):
-    '''[x_min, y_min, x_max, y_max, score] -> [x_min, y_min, width, height, score] 
+    '''
+           [x_min, y_min, x_max, y_max, score] 
+        -> [x_min, y_min, width, height, score] 
     '''
     return [obj[0], obj[1], obj[2] - obj[0], obj[3] - obj[1], obj[4]]
 
@@ -75,7 +73,6 @@ def convert_bbox_to_global(result, cur_w, cur_h, segment_params, resize_scale):
         cur_h (int): 현재 이미지의 원본 도면 상에서의 행
         segment_params (list): 분할 파라미터
         resize_scale (float): 분할시에 사용한 resize scaling factor
-
     """
     width, height, stride_w, stride_h = segment_params
     global_list = []
