@@ -3,6 +3,7 @@ import mmdet
 import cv2
 import pprint
 import numpy as np
+import copy
 from mmcv.runner import load_checkpoint
 from mmdet.apis import inference_detector, show_result_pyplot
 from mmdet.models import build_detector
@@ -37,7 +38,7 @@ def load_model(config: str, checkpoint: str):
     device='cuda:0'
 
     config = mmcv.Config.fromfile(config)
-    config.model.pretrained = None
+    # config.model.pretrained = None
 
     model = build_detector(config.model)
 
@@ -47,6 +48,7 @@ def load_model(config: str, checkpoint: str):
     model.cfg = config
 
     model.to(device)
+    model.eval()
 
     return model
 
@@ -122,18 +124,35 @@ def get_dict_result(result: list):
 
 def detect_segmented_imgs(model, seg_imgs: list, score_threshold: float):
     result = []
-
+    i = 0
     for image in seg_imgs:
         cur_w = image['w']
         cur_h = image['h']
         img = image['img']
+        #* 1. 분할된 도면 하나에 대해 inference 수행
         res = inference_detector(model, img)
+
+        #* 2. score filtering
         filtered_res = score_filtering(res, score_threshold)
+
+        # img_ = copy.deepcopy(img)
+        # for category in filtered_res:
+        #     for box in category:
+        #         # print(box)
+        #         cv2.rectangle(img_, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), color=(255, 0, 0), thickness=5)
+                
+        # cv2.imwrite(OUTPUT_DIR + f'test\\{i}.jpg', img_)
+        # i += 1
+        #* 3. 전역 좌표로 변환
         global_res = convert_bbox_to_global(filtered_res, cur_w, cur_h, segment_params, drawing_resize_scale)
+        #* 4. dictionary로 포맷 변환
         dict_res = get_dict_result(global_res)
+        #* 5. 결과에 추가
         result.extend(dict_res)
 
     dt_results = {}
+
+    #* out은 원래 filename 자리
     dt_results['out'] = result
     
     return dt_results
@@ -173,7 +192,6 @@ if __name__=='__main__':
     dt_result_after_nms_text_only = get_text_detection_result(nms_results, symbol_dict)
     dt_result_text = recognize_text(IMG_PATH, dt_result_after_nms_text_only, text_img_margin_ratio,
                                                symbol_dict)
-
     #! 7. 결과 XML 출력
     write_symbol_result_to_xml(OUTPUT_DIR, nms_results, symbol_dict, symbol_type_dict)
     write_text_result_to_xml(OUTPUT_DIR, dt_result_text, symbol_dict)

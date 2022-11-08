@@ -33,7 +33,6 @@ def recognize_text(image_path, nms_result, text_img_margin_ratio, symbol_dict):
 
             print_progress(i,len(bboxes), 'Progress:', 'Complete')
             box_coord = bboxes[i]["bbox"] # [x, y, width, height]
-
             height = int(box_coord[3] * (1 + text_img_margin_ratio))
             width = int(box_coord[2] * (1 + text_img_margin_ratio))
 
@@ -53,8 +52,9 @@ def recognize_text(image_path, nms_result, text_img_margin_ratio, symbol_dict):
 
             sub_img = image[y_min:y_max, x_min:x_max, :]
 
-            # if height > width * vertical_threshold: # 세로 문자열로 판단, aspect ratio 기준
-            #     sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)
+            vertical_threshold = 2
+            if height > width * vertical_threshold: # 세로 문자열로 판단, aspect ratio 기준
+                sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)
             if "text_rotated" in symbol_dict.keys():
                 if bboxes[i]["category_id"] == symbol_dict["text_rotated"]: # 세로 문자열로 판단, "text_rotated 카테고리일경우"
                     sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)
