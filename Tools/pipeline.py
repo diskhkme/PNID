@@ -13,10 +13,11 @@ from Predict_Postprocess.text_recognition.recognize_text import get_text_detecti
 from Common.symbol_io import read_symbol_txt, read_symbol_type_txt
 from Predict_Postprocess.gt_dt_data import non_max_suppression_fast
 from Visualize.test_result_visualize import draw_test_results_to_img
+import time
 
 CONFIG = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\mmdetection-2.25.1\\Dataset1005_srcnn_add\\sparse_rcnn_r50_fpn_1x_coco.py'
 CHECKPOINT = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\mmdetection-2.25.1\\Dataset1005_srcnn_add\\latest.pth'
-IMG_PATH = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\Data\\Drawing\\JPG\\26071-200-M6-052-00001.jpg'
+IMG_PATH = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\Data\\Drawing\\JPG\\26071-200-M6-052-00003.jpg'
 OUTPUT_DIR = 'C:\\Users\\DongwonJeong\\Desktop\\'
 SYM_PATH = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\Data\\Hyundai_SymbolClass_Sym_Only.txt'
 SYM_TYPE_PATH = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\Data\\Hyundai_SymbolClass_Type.txt'
@@ -131,18 +132,8 @@ def detect_segmented_imgs(model, seg_imgs: list, score_threshold: float):
         img = image['img']
         #* 1. 분할된 도면 하나에 대해 inference 수행
         res = inference_detector(model, img)
-
         #* 2. score filtering
         filtered_res = score_filtering(res, score_threshold)
-
-        # img_ = copy.deepcopy(img)
-        # for category in filtered_res:
-        #     for box in category:
-        #         # print(box)
-        #         cv2.rectangle(img_, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), color=(255, 0, 0), thickness=5)
-                
-        # cv2.imwrite(OUTPUT_DIR + f'test\\{i}.jpg', img_)
-        # i += 1
         #* 3. 전역 좌표로 변환
         global_res = convert_bbox_to_global(filtered_res, cur_w, cur_h, segment_params, drawing_resize_scale)
         #* 4. dictionary로 포맷 변환
@@ -172,17 +163,27 @@ def get_dt_result_nms(dt_result, nms_threshold):
     return filename_to_global_bbox_dict_after_nms
 
 if __name__=='__main__':
+    start = time.time()
+
     #! 1. 이미지 분할
     seg_imgs = segment_image(IMG_PATH, segment_params, drawing_resize_scale)
-    
+    seg_elapsed = time.time()
+    print(f'* 이미지 분할 소요 시간: {seg_elapsed - start}')
+
     #! 2. 학습한 모델 로드
     model = load_model(CONFIG, CHECKPOINT)
+    load_elapsed = time.time()
+    print(f'* 모델 Load 소요 시간: {load_elapsed - seg_elapsed}')
 
     #! 3. Detection 수행
     results = detect_segmented_imgs(model, seg_imgs, score_threshold)
+    detect_elapsed = time.time()
+    print(f'* Detection 소요 시간: {detect_elapsed - load_elapsed}')
 
     #! 4. NMS 수행
     nms_results = get_dt_result_nms(results, matching_iou_threshold)
+    nms_elapsed = time.time()
+    print(f'* NMS 소요 시간: {nms_elapsed - detect_elapsed}')
 
     #! 5. Symbol / Type 종류 dictionary로 열기
     symbol_dict = read_symbol_txt(SYM_PATH, include_text_as_class=True, include_text_orientation_as_class=False)
@@ -192,6 +193,13 @@ if __name__=='__main__':
     dt_result_after_nms_text_only = get_text_detection_result(nms_results, symbol_dict)
     dt_result_text = recognize_text(IMG_PATH, dt_result_after_nms_text_only, text_img_margin_ratio,
                                                symbol_dict)
+    print() #* Progress bar 개행 문제
+
+    text_recognition_elapsed = time.time()
+    print(f'* Detection 소요 시간: {text_recognition_elapsed - nms_elapsed}')
+
     #! 7. 결과 XML 출력
     write_symbol_result_to_xml(OUTPUT_DIR, nms_results, symbol_dict, symbol_type_dict)
     write_text_result_to_xml(OUTPUT_DIR, dt_result_text, symbol_dict)
+
+    print(f'* 총 소요 시간: {time.time() - start}')
