@@ -1,26 +1,23 @@
 import mmcv
-import mmdet
-import cv2
-import pprint
-import numpy as np
-import copy
+import time
+import sys
+from os import path, makedirs
 from mmcv.runner import load_checkpoint
-from mmdet.apis import inference_detector, show_result_pyplot
+from mmdet.apis import inference_detector
 from mmdet.models import build_detector
 from Data_Generator.generate_segmented_data import segment_image
 from Common.pnid_xml import write_symbol_result_to_xml, write_text_result_to_xml
 from Predict_Postprocess.text_recognition.recognize_text import get_text_detection_result, recognize_text
 from Common.symbol_io import read_symbol_txt, read_symbol_type_txt
 from Predict_Postprocess.gt_dt_data import non_max_suppression_fast
-from Visualize.test_result_visualize import draw_test_results_to_img
-import time
 
-CONFIG = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\mmdetection-2.25.1\\Dataset1005_srcnn_add\\sparse_rcnn_r50_fpn_1x_coco.py'
-CHECKPOINT = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\mmdetection-2.25.1\\Dataset1005_srcnn_add\\latest.pth'
-IMG_PATH = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\Data\\Drawing\\JPG\\26071-200-M6-052-00003.jpg'
-OUTPUT_DIR = 'C:\\Users\\DongwonJeong\\Desktop\\'
-SYM_PATH = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\Data\\Hyundai_SymbolClass_Sym_Only.txt'
-SYM_TYPE_PATH = 'C:\\Users\\DongwonJeong\\Desktop\\HyundaiPNID\\Data\\Hyundai_SymbolClass_Type.txt'
+INPUT_DIR = './input_files/'
+OUTPUT_DIR = './detection_results/'
+
+CONFIG = INPUT_DIR + 'model_config.py'
+CHECKPOINT = INPUT_DIR + 'latest.pth'
+SYM_PATH = INPUT_DIR + 'Hyundai_SymbolClass_Sym_Only.txt'
+SYM_TYPE_PATH = INPUT_DIR + 'Hyundai_SymbolClass_Type.txt'
 
 segment_params = [800, 800, 300, 300]
 drawing_resize_scale = 0.5
@@ -34,6 +31,17 @@ adaptive_thr_dict = {
 }
 
 text_img_margin_ratio = 0.1
+
+def check_dir(image_path):
+    if not path.isdir(INPUT_DIR):
+        print('Input 폴더를 찾을 수 없습니다. 실행 경로를 확인해 주세요.')
+        exit()
+    if not path.isdir(OUTPUT_DIR):
+        try:
+            makedirs(OUTPUT_DIR)
+        except:
+            print('Output 폴더 생성 실패')
+            exit()
 
 def load_model(config: str, checkpoint: str):
     device='cuda:0'
@@ -163,10 +171,20 @@ def get_dt_result_nms(dt_result, nms_threshold):
     return filename_to_global_bbox_dict_after_nms
 
 if __name__=='__main__':
+    if len(sys.argv) != 2:
+        print('! 입력 도면 파일 이름을 인자로 입력해 주세요')
+        exit()
+    
+    image_name = sys.argv[1]
+    image_path = INPUT_DIR + image_name
+
     start = time.time()
+    print('* Starting inference...')
+
+    check_dir(image_path)
 
     #! 1. 이미지 분할
-    seg_imgs = segment_image(IMG_PATH, segment_params, drawing_resize_scale)
+    seg_imgs = segment_image(image_path, segment_params, drawing_resize_scale)
     seg_elapsed = time.time()
     print(f'* 이미지 분할 소요 시간: {seg_elapsed - start}')
 
@@ -191,12 +209,12 @@ if __name__=='__main__':
 
     #! 6. Text recognition 수행
     dt_result_after_nms_text_only = get_text_detection_result(nms_results, symbol_dict)
-    dt_result_text = recognize_text(IMG_PATH, dt_result_after_nms_text_only, text_img_margin_ratio,
+    dt_result_text = recognize_text(image_path, dt_result_after_nms_text_only, text_img_margin_ratio,
                                                symbol_dict)
-    print() #* Progress bar 개행 문제
+    print() #* Progress bar 개행 문제 때문에 추가
 
     text_recognition_elapsed = time.time()
-    print(f'* Detection 소요 시간: {text_recognition_elapsed - nms_elapsed}')
+    print(f'* Text recognition 소요 시간: {text_recognition_elapsed - nms_elapsed}')
 
     #! 7. 결과 XML 출력
     write_symbol_result_to_xml(OUTPUT_DIR, nms_results, symbol_dict, symbol_type_dict)

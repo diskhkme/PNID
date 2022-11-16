@@ -213,8 +213,12 @@ def segment_write_images(img_path, seg_out_dir, objects, txt_object_list, includ
 def segment_image(img_path, segment_params, drawing_resize_scale):
     """ 하나의 도면을 분할하고 리스트 형태로 리턴
     """
+
+    # try:
     img = cv2.imread(img_path)
     img = cv2.resize(img, dsize=(0,0), fx=drawing_resize_scale, fy=drawing_resize_scale, interpolation=cv2.INTER_LINEAR)
+    # except Exception as e:
+    #     print(str(e))
 
     width_size = segment_params[0]
     height_size = segment_params[1]
