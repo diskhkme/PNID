@@ -18,7 +18,7 @@ def calculate_diagonal(bbox):
     return np.sqrt(width ** 2 + height ** 2)
 
 
-def big_symbol_check(bbox, diagonal_threshold=700):
+def big_symbol_check(bbox, diagonal_threshold=500):
     """
     Args:
         bbox: [int], [xmin, ymin, xmax, ymax]
