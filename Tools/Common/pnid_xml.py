@@ -8,6 +8,25 @@ import matplotlib.pyplot as plt
 from xml.etree.ElementTree import Element, ElementTree, dump
 
 
+def apply_counter_rotation(angle_deg, xmin, ymin, xmax, ymax):
+    x_center = (xmin+xmax)/2.0
+    y_center = (ymin+ymax)/2.0
+
+    angle_rad = math.radians(angle_deg)
+
+    xmin_rot = x_center + math.cos(angle_rad) * (xmin - x_center) - math.sin(angle_rad) * (ymin - y_center)
+    ymin_rot = y_center + math.sin(angle_rad) * (xmin - x_center) + math.cos(angle_rad) * (ymin - y_center)
+
+    xmax_rot = x_center + math.cos(angle_rad) * (xmax - x_center) - math.sin(angle_rad) * (ymax - y_center)
+    ymax_rot = y_center + math.sin(angle_rad) * (xmax - x_center) + math.cos(angle_rad) * (ymax - y_center)
+
+    res_xmin = int(min(xmin_rot, xmax_rot))
+    res_xmax = int(max(xmin_rot, xmax_rot))
+    res_ymin = int(min(ymin_rot, ymax_rot))
+    res_ymax = int(max(ymin_rot, ymax_rot))
+
+    return res_xmin, res_ymin, res_xmax, res_ymax
+
 def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict=None, img_shape_tuple=(9933, 7016, 3)):
     for filename, objects in dt_result.items():
         root = Element("annotation")
@@ -56,24 +75,30 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
                 type_node = Element("type")
                 type_node.text = [typename_name for sym_name, typename_name in symbol_type_dict.items() if sym_name == symbol_name][0]
 
+            degree_node = Element("degree")
+
             bndbox_node = Element("bndbox")
+            degree_node.text = str(0)
+
+            xmin, ymin, xmax, ymax = object["bbox"][0], object["bbox"][1], object["bbox"][0] + object["bbox"][2], object["bbox"][1] + object["bbox"][3]
+            if "degree" in object and object["degree"] != 0:
+                degree_node.text = str(object["degree"])
+                xmin, ymin, xmax, ymax = apply_counter_rotation(-object["degree"], xmin, ymin, xmax, ymax)
+                xmin, ymin, xmax, ymax = int(xmin), int(ymin), int(xmax), int(ymax)
 
             xmin_node = Element("xmin")
-            xmin_node.text = str(object["bbox"][0])
+            xmin_node.text = str(xmin)
             ymin_node = Element("ymin")
-            ymin_node.text = str(object["bbox"][1])
+            ymin_node.text = str(ymin)
             xmax_node = Element("xmax")
-            xmax_node.text = str(object["bbox"][0] + object["bbox"][2])
+            xmax_node.text = str(xmax)
             ymax_node = Element("ymax")
-            ymax_node.text = str(object["bbox"][1] + object["bbox"][3])
+            ymax_node.text = str(ymax)
 
             bndbox_node.append(xmin_node)
             bndbox_node.append(ymin_node)
             bndbox_node.append(xmax_node)
             bndbox_node.append(ymax_node)
-
-            degree_node = Element("degree")
-            degree_node.text = str(0)
 
             flip_node = Element("flip")
             flip_node.text = "n"
@@ -94,6 +119,8 @@ def write_symbol_result_to_xml(out_dir, dt_result, symbol_dict, symbol_type_dict
         indent(root)
         out_path = os.path.join(out_dir, f"{filename}.xml")
         ElementTree(root).write(out_path)
+
+    return root
 
 
 def write_text_result_to_xml(out_dir, dt_result_text, symbol_dict):
@@ -122,14 +149,20 @@ def write_text_result_to_xml(out_dir, dt_result_text, symbol_dict):
 
             bndbox_node = Element("bndbox")
 
+            xmin, ymin, xmax, ymax = object["bbox"][0], object["bbox"][1], object["bbox"][0] + object["bbox"][2], object["bbox"][1] + object["bbox"][3]
+            if "degree" in object and object["degree"] != 0:
+                degree_node.text = str(object["degree"])
+                xmin, ymin, xmax, ymax = apply_counter_rotation(-object["degree"], xmin, ymin, xmax, ymax)
+                xmin, ymin, xmax, ymax = int(xmin), int(ymin), int(xmax), int(ymax)
+
             xmin_node = Element("xmin")
-            xmin_node.text = str(object["bbox"][0])
+            xmin_node.text = str(xmin)
             ymin_node = Element("ymin")
-            ymin_node.text = str(object["bbox"][1])
+            ymin_node.text = str(ymin)
             xmax_node = Element("xmax")
-            xmax_node.text = str(object["bbox"][0] + object["bbox"][2])
+            xmax_node.text = str(xmax)
             ymax_node = Element("ymax")
-            ymax_node.text = str(object["bbox"][1] + object["bbox"][3])
+            ymax_node.text = str(ymax)
 
 
             flip_node = Element("flip")
@@ -154,6 +187,8 @@ def write_text_result_to_xml(out_dir, dt_result_text, symbol_dict):
         indent(root)
         out_path = os.path.join(out_dir, f"{filename}_text.xml")
         ElementTree(root).write(out_path)
+
+    return root
 
 
 class xml_reader():

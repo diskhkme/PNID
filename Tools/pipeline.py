@@ -1,3 +1,6 @@
+import copy
+import os.path
+
 import mmcv
 import time
 import sys
@@ -216,8 +219,17 @@ if __name__=='__main__':
     text_recognition_elapsed = time.time()
     print(f'* Text recognition 소요 시간: {text_recognition_elapsed - nms_elapsed}')
 
-    #! 7. 결과 XML 출력
-    write_symbol_result_to_xml(OUTPUT_DIR, nms_results, symbol_dict, symbol_type_dict)
-    write_text_result_to_xml(OUTPUT_DIR, dt_result_text, symbol_dict)
+    #! 7. 결과 XML 빌드
+    symbol_xml_root = write_symbol_result_to_xml(OUTPUT_DIR, nms_results, symbol_dict, symbol_type_dict)
+    text_xml_root = write_text_result_to_xml(OUTPUT_DIR, dt_result_text, symbol_dict)
+
+    # ! 8. 결과 단일(Symbol+Text) XML 출력
+    import xml
+    output_xml_root = copy.deepcopy(text_xml_root)
+    for obj in symbol_xml_root.findall('symbol_object'):
+        output_xml_root.append(obj)
+
+    out_path = os.path.join(OUTPUT_DIR, f'{os.path.splitext(image_name)[0]}_result.xml')
+    xml.etree.ElementTree.ElementTree(output_xml_root).write(out_path)
 
     print(f'* 총 소요 시간: {time.time() - start}')

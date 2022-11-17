@@ -18,7 +18,11 @@ def get_text_detection_result(dt_result, symbol_dict):
     return bboxes_text
 
 def recognize_text(image_path, nms_result, text_img_margin_ratio, symbol_dict):
-    pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract'
+    import platform
+    if platform.system() == 'Windows':
+        pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract'
+    else:
+        pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
     dt_result_text = deepcopy(nms_result)
 
     new_bboxes = []
@@ -53,8 +57,10 @@ def recognize_text(image_path, nms_result, text_img_margin_ratio, symbol_dict):
             sub_img = image[y_min:y_max, x_min:x_max, :]
 
             vertical_threshold = 2
+            new_box["degree"] = 0
             if height > width * vertical_threshold: # 세로 문자열로 판단, aspect ratio 기준
                 sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)
+                new_box["degree"] = 90
             if "text_rotated" in symbol_dict.keys():
                 if bboxes[i]["category_id"] == symbol_dict["text_rotated"]: # 세로 문자열로 판단, "text_rotated 카테고리일경우"
                     sub_img = cv2.rotate(sub_img, cv2.ROTATE_90_CLOCKWISE)
@@ -69,6 +75,7 @@ def recognize_text(image_path, nms_result, text_img_margin_ratio, symbol_dict):
 
             new_box["string"] = recognized_text
             new_box["string_conf"] = conf
+
 
             new_bboxes.append(new_box)
 
